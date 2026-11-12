@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "title": "1-1. Mầu nhiệm về sự tha tội và Đấng An Sang Hồng",
+        "verses": [
+            { "ref": "Sáng Thế Ký 2:7", "text": "Đức Chúa Trời lấy bụi đất nắn nên hình người, hà sanh khí vào lỗ mũi; thì người trở nên một loài sanh linh." },
+            { "ref": "Truyền Đạo 12:7", "text": "Và bụi tro trở đất y như nguyên cũ, và thần linh trở về nơi Đức Chúa Trời, là Đấng đã ban nó." }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "1-2. Đấng Cứu Chúa theo mỗi thời đại và danh mới",
+        "verses": [
+            { "ref": "Công Vụ Các Sứ Tồ 4:12", "text": "Chẳng có sự cứu rỗi trong đấng nào khác; vì dưới trời chẳng có danh nào khác đặt chọn loài người, để chúng ta phải nhờ đó mà được cứu." },
+            { "ref": "Khải Huyền 3:12", "text": "Kẻ nào thắng, ta sẽ cho làm trụ trong đền Đức Chúa Trời tôi... và ta sẽ viết tên danh mới ta trên người ấy." }
+        ]
+    },
+    {
+        "id": 3,
+        "title": "1-3. Trái Sự Sống và Đấng An Sang Hồng",
+        "verses": [
+            { "ref": "Sáng Thế Ký 3:22-24", "text": "Giê-hô-va Đức Chúa Trời phán rằng: Này, người đã thành một kẻ như Chúng Ta... Ngài bèn đuổi loài người ra khỏi..." },
+            { "ref": "Giăng 6:53-54", "text": "Đức Chúa Jêsus phán cùng các ngươi rằng: Quả thật, quả thật, ta nói cùng các ngươi, nếu các ngươi không ăn thịt Con Người và không uống huyết Ngài, thì không có sự sống trong mình..." }
+        ]
+    }
+]
