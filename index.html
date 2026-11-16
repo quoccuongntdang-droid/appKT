@@ -6,31 +6,30 @@
     <title>Flashcard Ôn Tập Kinh Thánh</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .container { max-width: 450px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .container { max-width: 450px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
-        .controls { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .controls { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
         select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
         .btn-random { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; }
         .btn-random:hover { background: #d35400; }
         
-        /* Hiệu ứng lật thẻ Flashcard */
-        .flashcard-container { perspective: 1000px; width: 100%; height: 260px; margin-bottom: 20px; cursor: pointer; }
-        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        /* Hiệu ứng lật thẻ Flashcard - dùng min-height và flex để tránh tràn chữ */
+        .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
+        .flashcard { width: 100%; height: 100%; min-height: 285px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; }
         .flashcard.flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; border-radius: 12px; text-align: center; }
+        .card-face { position: absolute; width: 100%; height: 100%; min-height: 285px; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; border-radius: 12px; text-align: center; overflow-y: auto; }
         .card-front { background: #ffffff; border: 2px solid #3498db; color: #2c3e50; }
         .card-back { background: #ebf5fb; border: 2px solid #2980b9; color: #1b4f72; transform: rotateY(180deg); }
         
-        .card-title { font-size: 13px; color: #7f8c8d; margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
-        .card-ref { font-size: 22px; font-weight: bold; color: #2980b9; }
-        .card-text { font-size: 16px; line-height: 1.5; }
+        .card-title { font-size: 13px; color: #7f8c8d; margin-bottom: 8px; text-transform: uppercase; font-weight: bold; word-break: break-word; width: 100%; }
+        .card-ref { font-size: 20px; font-weight: bold; color: #2980b9; word-break: break-word; width: 100%; margin: 10px 0; }
+        .card-text { font-size: 15px; line-height: 1.6; word-break: break-word; width: 100%; max-height: 220px; overflow-y: auto; padding-right: 5px; }
         .hint { font-size: 12px; color: #95a5a6; margin-top: 15px; font-style: italic; }
 
-        .nav-buttons { display: flex; gap: 10px; }
+        .nav-buttons { display: flex; gap: 10px; width: 100%; }
         .btn-nav { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-nav:hover { background: #219653; }
         .progress { text-align: center; margin-top: 15px; font-size: 14px; color: #555; font-weight: bold; }
-        .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
@@ -73,7 +72,6 @@
         let currentVerseIndex = 0;
         let isFlipped = false;
 
-        // Tự động nạp dữ liệu từ file data.json khi mở trang web
         async function loadDatabase() {
             try {
                 const response = await fetch('data.json');
@@ -152,7 +150,6 @@
             loadCard();
         }
 
-        // Chạy hàm nạp dữ liệu khi mở trang
         window.onload = loadDatabase;
     </script>
 </body>
