@@ -13,6 +13,10 @@
         .btn-random { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; }
         .btn-random:hover { background: #d35400; }
         
+        /* Box import Markdown */
+        .import-box { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center; }
+        .import-box label { font-size: 13px; color: #475569; display: block; margin-bottom: 5px; font-weight: bold; }
+        
         /* Hiệu ứng lật thẻ Flashcard - dùng min-height và flex để tránh tràn chữ */
         .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; min-height: 285px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; }
@@ -30,6 +34,9 @@
         .btn-nav { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-nav:hover { background: #219653; }
         .progress { text-align: center; margin-top: 15px; font-size: 14px; color: #555; font-weight: bold; }
+        
+        .btn-download { background: #2980b9; color: white; border: none; margin-top: 8px; font-size: 13px; padding: 8px; }
+        .btn-download:hover { background: #1f618d; }
     </style>
 </head>
 <body>
@@ -42,6 +49,12 @@
                 <option value="">Đang tải cơ sở dữ liệu...</option>
             </select>
             <button class="btn-random" onclick="selectRandomLesson()">🎲 Chọn Bài Ngẫu Nhiên</button>
+            
+            <div class="import-box">
+                <label>📂 Import file Markdown (.md):</label>
+                <input type="file" id="mdFileInput" accept=".md" onchange="importMarkdownFile(event)" style="font-size: 13px; width: 100%;">
+                <button class="btn-download" id="downloadJsonBtn" style="display: none;" onclick="downloadUpdatedJson()">📥 Tải xuống data.json mới</button>
+            </div>
         </div>
 
         <div class="flashcard-container" onclick="flipCard()">
@@ -77,20 +90,24 @@
                 const response = await fetch('data.json');
                 if (!response.ok) throw new Error('Không thể tải file dữ liệu');
                 bibleData = await response.json();
-                
-                const select = document.getElementById('lessonSelect');
-                select.innerHTML = '';
-                bibleData.forEach((lesson, index) => {
-                    let opt = document.createElement('option');
-                    opt.value = index;
-                    opt.textContent = lesson.title;
-                    select.appendChild(opt);
-                });
+                updateLessonSelect();
                 loadCard();
             } catch (error) {
                 document.getElementById('progressText').textContent = "Lỗi tải dữ liệu data.json!";
                 console.error(error);
             }
+        }
+
+        function updateLessonSelect() {
+            const select = document.getElementById('lessonSelect');
+            select.innerHTML = '';
+            bibleData.forEach((lesson, index) => {
+                let opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = lesson.title;
+                select.appendChild(opt);
+            });
+            select.value = currentLessonIndex;
         }
 
         function loadCard() {
@@ -145,9 +162,74 @@
         function selectRandomLesson() {
             if (bibleData.length === 0) return;
             currentLessonIndex = Math.floor(Math.random() * bibleData.length);
-            document.getElementById('lessonSelect').value = currentLessonIndex;
             currentVerseIndex = 0;
+            updateLessonSelect();
             loadCard();
+        }
+
+        // Tính năng đọc file Markdown và tự động bổ sung vào mảng dữ liệu
+        function importMarkdownFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mdText = e.target.result;
+                const lines = mdText.split(/\r?\n/);
+                
+                // Lấy tên file làm tiêu đề bài (bỏ đuôi .md)
+                let lessonTitle = file.name.replace(/\.md$/i, '').trim();
+                let versesList = [];
+                
+                lines.forEach(line => {
+                    let cleanLine = line.trim();
+                    // Lọc các dòng chứa tham chiếu Kinh Thánh (có dấu hai cột hoặc số câu)
+                    if (cleanLine && !cleanLine.startsWith('#') && cleanLine.includes(':')) {
+                        versesList.push({
+                            ref: cleanLine,
+                            text: "Nội dung câu Kinh Thánh (bạn có thể cập nhật nhanh hoặc nhờ tôi match bản 1934)..."
+                        });
+                    }
+                });
+
+                if (versesList.length === 0) {
+                    alert("Không tìm thấy dòng tham chiếu Kinh Thánh nào trong file .md này!");
+                    return;
+                }
+
+                // Tạo ID mới tự động
+                const newId = bibleData.length > 0 ? bibleData[bibleData.length - 1].id + 1 : 1;
+
+                const newLesson = {
+                    id: newId,
+                    title: lessonTitle,
+                    verses: versesList
+                };
+
+                // Thêm vào cơ sở dữ liệu hiện tại
+                bibleData.push(newLesson);
+                currentLessonIndex = bibleData.length - 1;
+                currentVerseIndex = 0;
+                
+                updateLessonSelect();
+                loadCard();
+
+                // Hiện nút tải file data.json mới
+                document.getElementById('downloadJsonBtn').style.display = 'block';
+                alert(`Đã import thành công bài "${lessonTitle}" (${versesList.length} câu)! Bạn có thể bấm nút "Tải xuống data.json mới" bên dưới để lưu file cập nhật.`);
+            };
+            reader.readAsText(file);
+        }
+
+        // Hàm hỗ trợ tải file data.json mới về máy để đưa lên GitHub
+        function downloadUpdatedJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bibleData, null, 4));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "data.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
 
         window.onload = loadDatabase;
