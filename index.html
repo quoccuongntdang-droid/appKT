@@ -9,15 +9,17 @@
         .container { max-width: 450px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
         .controls { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+        select, button, input[type="text"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
         .btn-random { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; }
         .btn-random:hover { background: #d35400; }
         
-        /* Box import Markdown */
-        .import-box { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center; }
-        .import-box label { font-size: 13px; color: #475569; display: block; margin-bottom: 5px; font-weight: bold; }
+        /* Box nhập link GitHub */
+        .import-box { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 8px; }
+        .import-box label { font-size: 13px; color: #475569; font-weight: bold; }
+        .btn-fetch { background: #8e44ad; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-fetch:hover { background: #732d91; }
         
-        /* Hiệu ứng lật thẻ Flashcard - dùng min-height và flex để tránh tràn chữ */
+        /* Hiệu ứng lật thẻ Flashcard */
         .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; min-height: 285px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; }
         .flashcard.flipped { transform: rotateY(180deg); }
@@ -35,7 +37,7 @@
         .btn-nav:hover { background: #219653; }
         .progress { text-align: center; margin-top: 15px; font-size: 14px; color: #555; font-weight: bold; }
         
-        .btn-download { background: #2980b9; color: white; border: none; margin-top: 8px; font-size: 13px; padding: 8px; }
+        .btn-download { background: #2980b9; color: white; border: none; font-size: 13px; padding: 8px; cursor: pointer; }
         .btn-download:hover { background: #1f618d; }
     </style>
 </head>
@@ -51,8 +53,9 @@
             <button class="btn-random" onclick="selectRandomLesson()">🎲 Chọn Bài Ngẫu Nhiên</button>
             
             <div class="import-box">
-                <label>📂 Import file Markdown (.md):</label>
-                <input type="file" id="mdFileInput" accept=".md" onchange="importMarkdownFile(event)" style="font-size: 13px; width: 100%;">
+                <label>🔗 Dán link file Markdown (.md) từ GitHub:</label>
+                <input type="text" id="mdUrlInput" placeholder="Ví dụ: https://raw.githubusercontent.com/.../bai.md">
+                <button class="btn-fetch" onclick="fetchMarkdownFromUrl()">🚀 Tải & Cập nhật bài học</button>
                 <button class="btn-download" id="downloadJsonBtn" style="display: none;" onclick="downloadUpdatedJson()">📥 Tải xuống data.json mới</button>
             </div>
         </div>
@@ -167,37 +170,49 @@
             loadCard();
         }
 
-        // Tính năng đọc file Markdown và tự động bổ sung vào mảng dữ liệu
-        function importMarkdownFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Tải nội dung file Markdown trực tiếp từ URL GitHub (khuyên dùng link dạng Raw)
+        async function fetchMarkdownFromUrl() {
+            let url = document.getElementById('mdUrlInput').value.trim();
+            if (!url) {
+                alert("Vui lòng dán link file Markdown!");
+                return;
+            }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mdText = e.target.result;
-                const lines = mdText.split(/\r?\n/);
+            // Nếu người dùng dán link GitHub dạng thông thường, tự đổi sang raw.githubusercontent.com cho chuẩn
+            if (url.includes("github.com") && !url.includes("raw.githubusercontent.com")) {
+                url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
+            }
+
+            try {
+                document.getElementById('progressText').textContent = "Đang tải dữ liệu từ link...";
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Không thể tải được nội dung từ link này.");
                 
-                // Lấy tên file làm tiêu đề bài (bỏ đuôi .md)
-                let lessonTitle = file.name.replace(/\.md$/i, '').trim();
+                const mdText = await response.text();
+                
+                // Lấy tên file từ URL làm tiêu đề bài
+                let urlParts = url.split('/');
+                let fileName = urlParts[urlParts.length - 1].replace(/\.md$/i, '').replace(/%20/g, ' ');
+                let lessonTitle = fileName.trim();
+
+                const lines = mdText.split(/\r?\n/);
                 let versesList = [];
                 
                 lines.forEach(line => {
                     let cleanLine = line.trim();
-                    // Lọc các dòng chứa tham chiếu Kinh Thánh (có dấu hai cột hoặc số câu)
                     if (cleanLine && !cleanLine.startsWith('#') && cleanLine.includes(':')) {
                         versesList.push({
                             ref: cleanLine,
-                            text: "Nội dung câu Kinh Thánh (bạn có thể cập nhật nhanh hoặc nhờ tôi match bản 1934)..."
+                            text: "Nội dung câu Kinh Thánh (bạn có thể copy sang đây hoặc gửi tôi match bản 1934)..."
                         });
                     }
                 });
 
                 if (versesList.length === 0) {
-                    alert("Không tìm thấy dòng tham chiếu Kinh Thánh nào trong file .md này!");
+                    alert("Không tìm thấy dòng tham chiếu Kinh Thánh nào trong file này!");
                     return;
                 }
 
-                // Tạo ID mới tự động
                 const newId = bibleData.length > 0 ? bibleData[bibleData.length - 1].id + 1 : 1;
 
                 const newLesson = {
@@ -206,7 +221,6 @@
                     verses: versesList
                 };
 
-                // Thêm vào cơ sở dữ liệu hiện tại
                 bibleData.push(newLesson);
                 currentLessonIndex = bibleData.length - 1;
                 currentVerseIndex = 0;
@@ -214,14 +228,15 @@
                 updateLessonSelect();
                 loadCard();
 
-                // Hiện nút tải file data.json mới
                 document.getElementById('downloadJsonBtn').style.display = 'block';
-                alert(`Đã import thành công bài "${lessonTitle}" (${versesList.length} câu)! Bạn có thể bấm nút "Tải xuống data.json mới" bên dưới để lưu file cập nhật.`);
-            };
-            reader.readAsText(file);
+                alert(`Đã tải và xử lý thành công bài "${lessonTitle}" (${versesList.length} câu)! Bây giờ bạn có thể bấm "Tải xuống data.json mới".`);
+            } catch (error) {
+                alert("Lỗi tải link: " + error.message);
+                loadCard();
+            }
         }
 
-        // Hàm hỗ trợ tải file data.json mới về máy để đưa lên GitHub
+        // Tải file data.json mới về máy để đưa lên GitHub
         function downloadUpdatedJson() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bibleData, null, 4));
             const downloadAnchor = document.createElement('a');
