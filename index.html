@@ -152,7 +152,6 @@
             } else {
                 currentVerseIndex = lesson.verses.length - 1; 
             }
-            loadCode(); // fallback
             loadCard();
         }
 
@@ -169,6 +168,13 @@
             currentVerseIndex = 0;
             updateLessonSelect();
             loadCard();
+        }
+
+        // Hàm giải mã ký tự HTML entities chuẩn xác
+        function decodeHtmlEntities(str) {
+            let txt = document.createElement("textarea");
+            txt.innerHTML = str;
+            return txt.value;
         }
 
         async function fetchMarkdownFromUrl() {
@@ -189,10 +195,10 @@
                 
                 const mdText = await response.text();
                 
-                // Giải mã font tiếng Việt bị mã hóa URL trên link GitHub (ví dụ %C3%A1 -> á)
                 let urlParts = url.split('/');
                 let rawFileName = urlParts[urlParts.length - 1].replace(/\.md$/i, '');
                 let lessonTitle = decodeURIComponent(rawFileName).replace(/%20/g, ' ').trim();
+                lessonTitle = decodeHtmlEntities(lessonTitle);
 
                 const lines = mdText.split(/\r?\n/);
                 let versesList = [];
@@ -200,8 +206,9 @@
                 lines.forEach(line => {
                     let cleanLine = line.trim();
                     if (cleanLine && !cleanLine.startsWith('#') && cleanLine.includes(':')) {
+                        let decodedRef = decodeHtmlEntities(cleanLine);
                         versesList.push({
-                            ref: cleanLine,
+                            ref: decodedRef,
                             text: "Nội dung câu Kinh Thánh..."
                         });
                     }
@@ -228,7 +235,7 @@
                 loadCard();
 
                 document.getElementById('downloadJsonBtn').style.display = 'block';
-                alert(`Đã xử lý xong bài "${lessonTitle}" (${versesList.length} câu)! Hãy bấm nút "Tải xuống data.json mới" để lưu file lên GitHub.`);
+                alert(`Đã xử lý xong bài "${lessonTitle}" (${versesList.length} câu)! Hãy bấm nút "Tải xuống data.json mới" để lưu file.`);
             } catch (error) {
                 alert("Lỗi tải link: " + error.message);
                 loadCard();
