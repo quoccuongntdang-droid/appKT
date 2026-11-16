@@ -9,15 +9,9 @@
         .container { max-width: 450px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
         .controls { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        select, button, input[type="text"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+        select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
         .btn-random { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; }
         .btn-random:hover { background: #d35400; }
-        
-        /* Box nhập link GitHub */
-        .import-box { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 8px; }
-        .import-box label { font-size: 13px; color: #475569; font-weight: bold; }
-        .btn-fetch { background: #8e44ad; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-fetch:hover { background: #732d91; }
         
         /* Hiệu ứng lật thẻ Flashcard */
         .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
@@ -36,9 +30,6 @@
         .btn-nav { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-nav:hover { background: #219653; }
         .progress { text-align: center; margin-top: 15px; font-size: 14px; color: #555; font-weight: bold; }
-        
-        .btn-download { background: #2980b9; color: white; border: none; font-size: 13px; padding: 8px; cursor: pointer; }
-        .btn-download:hover { background: #1f618d; }
     </style>
 </head>
 <body>
@@ -51,13 +42,6 @@
                 <option value="">Đang tải cơ sở dữ liệu...</option>
             </select>
             <button class="btn-random" onclick="selectRandomLesson()">🎲 Chọn Bài Ngẫu Nhiên</button>
-            
-            <div class="import-box">
-                <label>🔗 Dán link file Markdown (.md) từ GitHub:</label>
-                <input type="text" id="mdUrlInput" placeholder="Ví dụ: https://raw.githubusercontent.com/.../bai.md">
-                <button class="btn-fetch" onclick="fetchMarkdownFromUrl()">🚀 Tải & Cập nhật bài học</button>
-                <button class="btn-download" id="downloadJsonBtn" style="display: none;" onclick="downloadUpdatedJson()">📥 Tải xuống data.json mới</button>
-            </div>
         </div>
 
         <div class="flashcard-container" onclick="flipCard()">
@@ -168,88 +152,6 @@
             currentVerseIndex = 0;
             updateLessonSelect();
             loadCard();
-        }
-
-        // Hàm giải mã ký tự HTML entities chuẩn xác
-        function decodeHtmlEntities(str) {
-            let txt = document.createElement("textarea");
-            txt.innerHTML = str;
-            return txt.value;
-        }
-
-        async function fetchMarkdownFromUrl() {
-            let url = document.getElementById('mdUrlInput').value.trim();
-            if (!url) {
-                alert("Vui lòng dán link file Markdown!");
-                return;
-            }
-
-            if (url.includes("github.com") && !url.includes("raw.githubusercontent.com")) {
-                url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
-            }
-
-            try {
-                document.getElementById('progressText').textContent = "Đang tải dữ liệu từ link...";
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Không thể tải được nội dung từ link này.");
-                
-                const mdText = await response.text();
-                
-                let urlParts = url.split('/');
-                let rawFileName = urlParts[urlParts.length - 1].replace(/\.md$/i, '');
-                let lessonTitle = decodeURIComponent(rawFileName).replace(/%20/g, ' ').trim();
-                lessonTitle = decodeHtmlEntities(lessonTitle);
-
-                const lines = mdText.split(/\r?\n/);
-                let versesList = [];
-                
-                lines.forEach(line => {
-                    let cleanLine = line.trim();
-                    if (cleanLine && !cleanLine.startsWith('#') && cleanLine.includes(':')) {
-                        let decodedRef = decodeHtmlEntities(cleanLine);
-                        versesList.push({
-                            ref: decodedRef,
-                            text: "Nội dung câu Kinh Thánh..."
-                        });
-                    }
-                });
-
-                if (versesList.length === 0) {
-                    alert("Không tìm thấy dòng tham chiếu Kinh Thánh nào trong file này!");
-                    return;
-                }
-
-                const newId = bibleData.length > 0 ? bibleData[bibleData.length - 1].id + 1 : 1;
-
-                const newLesson = {
-                    id: newId,
-                    title: lessonTitle,
-                    verses: versesList
-                };
-
-                bibleData.push(newLesson);
-                currentLessonIndex = bibleData.length - 1;
-                currentVerseIndex = 0;
-                
-                updateLessonSelect();
-                loadCard();
-
-                document.getElementById('downloadJsonBtn').style.display = 'block';
-                alert(`Đã xử lý xong bài "${lessonTitle}" (${versesList.length} câu)! Hãy bấm nút "Tải xuống data.json mới" để lưu file.`);
-            } catch (error) {
-                alert("Lỗi tải link: " + error.message);
-                loadCard();
-            }
-        }
-
-        function downloadUpdatedJson() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bibleData, null, 4));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "data.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
         }
 
         window.onload = loadDatabase;
