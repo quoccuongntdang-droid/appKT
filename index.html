@@ -152,6 +152,7 @@
             } else {
                 currentVerseIndex = lesson.verses.length - 1; 
             }
+            loadCode(); // fallback
             loadCard();
         }
 
@@ -170,7 +171,6 @@
             loadCard();
         }
 
-        // Tải nội dung file Markdown trực tiếp từ URL GitHub (khuyên dùng link dạng Raw)
         async function fetchMarkdownFromUrl() {
             let url = document.getElementById('mdUrlInput').value.trim();
             if (!url) {
@@ -178,7 +178,6 @@
                 return;
             }
 
-            // Nếu người dùng dán link GitHub dạng thông thường, tự đổi sang raw.githubusercontent.com cho chuẩn
             if (url.includes("github.com") && !url.includes("raw.githubusercontent.com")) {
                 url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
             }
@@ -190,10 +189,10 @@
                 
                 const mdText = await response.text();
                 
-                // Lấy tên file từ URL làm tiêu đề bài
+                // Giải mã font tiếng Việt bị mã hóa URL trên link GitHub (ví dụ %C3%A1 -> á)
                 let urlParts = url.split('/');
-                let fileName = urlParts[urlParts.length - 1].replace(/\.md$/i, '').replace(/%20/g, ' ');
-                let lessonTitle = fileName.trim();
+                let rawFileName = urlParts[urlParts.length - 1].replace(/\.md$/i, '');
+                let lessonTitle = decodeURIComponent(rawFileName).replace(/%20/g, ' ').trim();
 
                 const lines = mdText.split(/\r?\n/);
                 let versesList = [];
@@ -203,7 +202,7 @@
                     if (cleanLine && !cleanLine.startsWith('#') && cleanLine.includes(':')) {
                         versesList.push({
                             ref: cleanLine,
-                            text: "Nội dung câu Kinh Thánh (bạn có thể copy sang đây hoặc gửi tôi match bản 1934)..."
+                            text: "Nội dung câu Kinh Thánh..."
                         });
                     }
                 });
@@ -229,14 +228,13 @@
                 loadCard();
 
                 document.getElementById('downloadJsonBtn').style.display = 'block';
-                alert(`Đã tải và xử lý thành công bài "${lessonTitle}" (${versesList.length} câu)! Bây giờ bạn có thể bấm "Tải xuống data.json mới".`);
+                alert(`Đã xử lý xong bài "${lessonTitle}" (${versesList.length} câu)! Hãy bấm nút "Tải xuống data.json mới" để lưu file lên GitHub.`);
             } catch (error) {
                 alert("Lỗi tải link: " + error.message);
                 loadCard();
             }
         }
 
-        // Tải file data.json mới về máy để đưa lên GitHub
         function downloadUpdatedJson() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bibleData, null, 4));
             const downloadAnchor = document.createElement('a');
