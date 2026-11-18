@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcard Ôn Tập Kinh Thánh - Chinh Phục 5 Chủ Đề</title>
+    <title>Ôn Tập & Kiểm Tra Trí Nhớ Kinh Thánh</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .container { max-width: 480px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
+        .container { max-width: 520px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
         
         /* Màn hình chọn Chủ đề */
@@ -26,6 +26,9 @@
         .btn-mode:hover { background: #2980b9; }
         .btn-random-mix { background: #9b59b6; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
         .btn-random-mix:hover { background: #8e44ad; }
+        .btn-quiz-mode { background: #e67e22; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .btn-quiz-mode:hover { background: #d35400; }
+        
         .btn-back { background: #95a5a6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; align-self: flex-start; }
         .btn-back:hover { background: #7f8c8d; }
 
@@ -48,6 +51,16 @@
         .nav-buttons { display: flex; gap: 10px; width: 100%; }
         .btn-nav { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-nav:hover { background: #219653; }
+        
+        /* Giao diện Kiểm tra trắc nghiệm ghép đôi */
+        .quiz-box { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .quiz-question { background: #fdfefe; border: 2px solid #f39c12; padding: 15px; border-radius: 10px; text-align: center; }
+        .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+        .quiz-option-btn { background: #fff; border: 1px solid #bdc3c7; padding: 12px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; transition: 0.2s; }
+        .quiz-option-btn:hover { background: #f2f4f4; border-color: #7f8c8d; }
+        .quiz-option-btn.correct { background: #2ecc71 !important; color: white; border-color: #27ae60; }
+        .quiz-option-btn.wrong { background: #e74c3c !important; color: white; border-color: #c0392b; }
+
         .progress { text-align: center; margin-top: 15px; font-size: 14px; color: #555; font-weight: bold; }
         .hidden { display: none !important; }
     </style>
@@ -60,19 +73,18 @@
         <!-- MÀN HÌNH 1: CHỌN CHỦ ĐỀ LỚN -->
         <div id="screenTopics" class="hidden">
             <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 15px;">Chọn Chủ đề lớn để bắt đầu. Hoàn thành Chủ đề trước để mở khóa Chủ đề tiếp theo!</p>
-            <div class="topic-grid" id="topicGrid">
-                <!-- Nội dung được tạo tự động bằng JS -->
-            </div>
+            <div class="topic-grid" id="topicGrid"></div>
         </div>
 
         <!-- MÀN HÌNH 2: CHỌN CHẾ ĐỘ TRONG CHỦ ĐỀ -->
         <div id="screenModes" class="hidden">
             <button class="btn-back" onclick="goToScreenTopics()">⬅️ Quay lại danh sách Chủ đề</button>
             <h3 id="modeTopicTitle" style="color: #2980b9; text-align: center; margin-top: 0;">Chủ đề</h3>
-            <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 20px;">Lựa chọn phương thức ôn tập:</p>
+            <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 20px;">Lựa chọn phương thức ôn tập & kiểm tra:</p>
             <div class="mode-container">
-                <button class="btn-mode" onclick="startModeLesson()">📚 Học theo từng bài cụ thể</button>
-                <button class="btn-random-mix" onclick="startModeMix()">🔀 Trộn đề ngẫu nhiên (10 bài - Tăng độ khó)</button>
+                <button class="btn-mode" onclick="startModeLesson()">📚 Học Flashcard theo từng bài</button>
+                <button class="btn-random-mix" onclick="startModeMix()">🔀 Trộn đề Flashcard toàn chủ đề</button>
+                <button class="btn-quiz-mode" onclick="startQuizMode()">🎯 Kiểm tra Trắc nghiệm (Khớp Địa chỉ & Nội dung)</button>
             </div>
         </div>
 
@@ -81,9 +93,7 @@
             <button class="btn-back" onclick="goToScreenModes()">⬅️ Đổi chế độ</button>
             
             <div class="controls" id="lessonSelectContainer">
-                <select id="lessonSelect" onchange="changeLesson()">
-                    <!-- Dropdown danh sách bài học trong chủ đề -->
-                </select>
+                <select id="lessonSelect" onchange="changeLesson()"></select>
             </div>
 
             <div class="flashcard-container" onclick="flipCard()">
@@ -104,8 +114,26 @@
                 <button class="btn-nav" onclick="prevVerse()">⬅️ Câu Trước</button>
                 <button class="btn-nav" onclick="nextVerse()">Câu Sau ➡️</button>
             </div>
-
             <div class="progress" id="progressText">Đang khởi tạo...</div>
+        </div>
+
+        <!-- MÀN HÌNH 4: GIAO DIỆN KIỂM TRA TRẮC NGHIỆM KHỚP ĐỊA CHỈ & NỘI DUNG -->
+        <div id="screenQuiz" class="hidden">
+            <button class="btn-back" onclick="goToScreenModes()">⬅️ Đổi chế độ</button>
+            <div class="quiz-box">
+                <div style="font-size: 13px; font-weight: bold; color: #e67e22; text-align: center;" id="quizTopicName">Chủ đề kiểm tra</div>
+                <div class="quiz-question">
+                    <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 5px;">HÃY CHỌN ĐỊA CHỈ (REFERENCE) CHÍNH XÁC CHO CÂU KINH THÁNH SAU:</div>
+                    <div id="quizQuestionText" style="font-size: 14px; font-weight: bold; color: #2c3e50; line-height: 1.5;">Nội dung câu...</div>
+                </div>
+                <div class="quiz-options" id="quizOptionsContainer">
+                    <!-- Các nút đáp án trắc nghiệm -->
+                </div>
+                <div class="nav-buttons" style="margin-top: 10px;">
+                    <button class="btn-nav hidden" id="btnNextQuiz" onclick="nextQuizQuestion()">Câu Tiếp Theo ➡️</button>
+                </div>
+            </div>
+            <div class="progress" id="quizProgressText">Điểm: 0 | Câu 1 / 10</div>
         </div>
 
         <div id="globalProgress" class="progress" style="margin-top: 20px;">Đang tải cơ sở dữ liệu...</div>
@@ -114,12 +142,16 @@
     <script>
         let bibleData = [];
         let currentTopicId = 1;
-        let studyMode = 'lesson'; // 'lesson' hoặc 'mix'
-        let activeVerses = []; // Danh sách các câu flashcard hiện tại đang học
+        let studyMode = 'lesson'; 
+        let activeVerses = []; 
         let currentActiveIndex = 0;
         let isFlipped = false;
 
-        // Định nghĩa 5 Chủ đề lớn (Mỗi chủ đề 10 bài)
+        // Biến dành cho phần Quiz
+        let quizList = [];
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+
         const topicsConfig = [
             { id: 1, title: "Chủ Đề 1", name: "Bài 1 đến Bài 10", start: 1, end: 10 },
             { id: 2, title: "Chủ Đề 2", name: "Bài 11 đến Bài 20", start: 11, end: 20 },
@@ -128,7 +160,6 @@
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
 
-        // Quản lý mở khóa qua localStorage
         function getUnlockedTopic() {
             return parseInt(localStorage.getItem('unlockedTopicBible')) || 1;
         }
@@ -152,11 +183,11 @@
             }
         }
 
-        // --- ĐIỀU HƯỚNG MÀN HÌNH ---
         function showScreen(screenId) {
             document.getElementById('screenTopics').classList.add('hidden');
             document.getElementById('screenModes').classList.add('hidden');
             document.getElementById('screenFlashcard').classList.add('hidden');
+            document.getElementById('screenQuiz').classList.add('hidden');
             document.getElementById(screenId).classList.remove('hidden');
         }
 
@@ -173,7 +204,6 @@
             document.getElementById('globalProgress').classList.add('hidden');
         }
 
-        // --- RENDER DANH SÁCH CHỦ ĐỀ ---
         function renderTopicGrid() {
             const grid = document.getElementById('topicGrid');
             grid.innerHTML = '';
@@ -202,7 +232,6 @@
             });
         }
 
-        // --- XỬ LÝ CHẾ ĐỘ HỌC ---
         function getLessonsOfCurrentTopic() {
             const topic = topicsConfig.find(t => t.id === currentTopicId);
             return bibleData.slice(topic.start - 1, topic.end);
@@ -212,32 +241,23 @@
             studyMode = 'lesson';
             document.getElementById('lessonSelectContainer').classList.remove('hidden');
             updateLessonSelect();
-            
             const lessons = getLessonsOfCurrentTopic();
             if(lessons.length === 0) return;
-            
-            loadLessonVerses(0); // Mặc định load bài đầu tiên trong chủ đề
+            loadLessonVerses(0); 
             showScreen('screenFlashcard');
         }
 
         function startModeMix() {
             studyMode = 'mix';
-            document.getElementById('lessonSelectContainer').classList.add('hidden'); // Ẩn chọn bài vì trộn lẫn toàn chủ đề
-            
-            // Gom tất cả câu Kinh Thánh của 10 bài trong chủ đề lại và xáo trộn ngẫu nhiên (Fisher-Yates Shuffle)
+            document.getElementById('lessonSelectContainer').classList.add('hidden'); 
             let rawLessons = getLessonsOfCurrentTopic();
             activeVerses = [];
             rawLessons.forEach((lesson) => {
                 lesson.verses.forEach(v => {
-                    activeVerses.push({
-                        lessonTitle: lesson.title,
-                        ref: v.ref,
-                        text: v.text
-                    });
+                    activeVerses.push({ lessonTitle: lesson.title, ref: v.ref, text: v.text });
                 });
             });
 
-            // Xáo trộn ngẫu nhiên danh sách câu hỏi trong chủ đề
             for (let i = activeVerses.length - 1; i > 0; i--) {
                 let j = Math.floor(Math.random() * (i + 1));
                 [activeVerses[i], activeVerses[j]] = [activeVerses[j], activeVerses[i]];
@@ -248,12 +268,10 @@
             showScreen('screenFlashcard');
         }
 
-        // --- LOGIC HIỂN THỊ FLASHCARD ---
         function updateLessonSelect() {
             const select = document.getElementById('lessonSelect');
             select.innerHTML = '';
             let topicLessons = getLessonsOfCurrentTopic();
-            
             topicLessons.forEach((lesson, index) => {
                 let opt = document.createElement('option');
                 opt.value = index; 
@@ -264,20 +282,14 @@
 
         function changeLesson() {
             const select = document.getElementById('lessonSelect');
-            let relativeIndex = parseInt(select.value);
-            loadLessonVerses(relativeIndex);
+            loadLessonVerses(parseInt(select.value));
         }
 
         function loadLessonVerses(relativeIndex) {
             let topicLessons = getLessonsOfCurrentTopic();
             let lesson = topicLessons[relativeIndex];
             if (!lesson) return;
-
-            activeVerses = lesson.verses.map(v => ({
-                lessonTitle: lesson.title,
-                ref: v.ref,
-                text: v.text
-            }));
+            activeVerses = lesson.verses.map(v => ({ lessonTitle: lesson.title, ref: v.ref, text: v.text }));
             currentActiveIndex = 0;
             loadCardContent();
         }
@@ -285,15 +297,12 @@
         function loadCardContent() {
             if (activeVerses.length === 0) return;
             const item = activeVerses[currentActiveIndex];
-
-            let titlePrefix = (studyMode === 'mix') ? '🔀 [Trộn 10 Bài] ' : '';
+            let titlePrefix = (studyMode === 'mix') ? '🔀 [Trộn Toàn Chủ Đề] ' : '';
             document.getElementById('frontLessonTitle').textContent = titlePrefix + item.lessonTitle;
             document.getElementById('frontRef').textContent = item.ref;
             document.getElementById('backText').textContent = item.text;
             document.getElementById('backLessonTitle').textContent = item.lessonTitle;
-
             document.getElementById('progressText').textContent = `Câu ${currentActiveIndex + 1} / ${activeVerses.length}`;
-
             if(isFlipped) flipCard();
         }
 
@@ -307,11 +316,8 @@
             if (currentActiveIndex < activeVerses.length - 1) {
                 currentActiveIndex++;
             } else {
-                currentActiveIndex = 0; // Quay về đầu danh sách
-                // Nếu ở chế độ học theo bài bình thường và hoàn thành trọn vẹn chủ đề, tự động mở khóa chủ đề kế tiếp
-                if (studyMode === 'lesson') {
-                    unlockNextTopic(currentTopicId);
-                }
+                currentActiveIndex = 0; 
+                if (studyMode === 'lesson') unlockNextTopic(currentTopicId);
             }
             loadCardContent();
         }
@@ -323,6 +329,106 @@
                 currentActiveIndex = activeVerses.length - 1; 
             }
             loadCardContent();
+        }
+
+        // --- LOGIC CHẾ ĐỘ KIỂM TRA TRẮC NGHIỆM KHỚP NỘI DUNG & ĐỊA CHỈ ---
+        function startQuizMode() {
+            const topic = topicsConfig.find(t => t.id === currentTopicId);
+            document.getElementById('quizTopicName').textContent = `ĐANG KIỂM TRA: ${topic.title} (${topic.name})`;
+            
+            // Gom toàn bộ câu của chủ đề để tạo ngân hàng câu hỏi quiz
+            let rawLessons = getLessonsOfCurrentTopic();
+            let bank = [];
+            rawLessons.forEach(l => {
+                l.verses.forEach(v => {
+                    bank.push({ ref: v.ref, text: v.text, lesson: l.title });
+                });
+            });
+
+            if (bank.length < 4) {
+                alert("Chủ đề này chưa đủ dữ liệu để tạo trắc nghiệm!");
+                return;
+            }
+
+            // Xáo trộn ngân hàng và chọn ra tối đa 10 câu để kiểm tra
+            for (let i = bank.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [bank[i], bank[j]] = [bank[j], bank[i]];
+            }
+            quizList = bank.slice(0, 10);
+            currentQuizIndex = 0;
+            quizScore = 0;
+
+            showScreen('screenQuiz');
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            document.getElementById('btnNextQuiz').classList.add('hidden');
+            const currentQ = quizList[currentQuizIndex];
+            document.getElementById('quizQuestionText').textContent = `"${currentQ.text}"`;
+
+            // Lấy 3 đáp án sai khác trong ngân hàng
+            let wrongOptions = quizList.filter(q => q.ref !== currentQ.ref);
+            for (let i = wrongOptions.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [wrongOptions[i], wrongOptions[j]] = [wrongOptions[j], wrongOptions[i]];
+            }
+            let choices = [currentQ.ref, wrongOptions[0].ref, wrongOptions[1].ref, wrongOptions[2].ref];
+
+            // Trộn thứ tự 4 đáp án A, B, C, D
+            for (let i = choices.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+
+            const optContainer = document.getElementById('quizOptionsContainer');
+            optContainer.innerHTML = '';
+
+            choices.forEach(choiceText => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option-btn';
+                btn.textContent = choiceText;
+                btn.onclick = () => checkQuizAnswer(btn, choiceText, currentQ.ref);
+                optContainer.appendChild(btn);
+            });
+
+            document.getElementById('quizProgressText').textContent = `Điểm: ${quizScore} | Câu ${currentQuizIndex + 1} / ${quizList.length} (${currentQ.lesson})`;
+        }
+
+        function checkQuizAnswer(selectedBtn, selectedChoice, correctRef) {
+            const allBtns = document.querySelectorAll('.quiz-option-btn');
+            allBtns.forEach(b => b.disabled = true); // Khóa không cho bấm nữa
+
+            if (selectedChoice === correctRef) {
+                selectedBtn.classList.add('correct');
+                quizScore += 10;
+            } else {
+                selectedBtn.classList.add('wrong');
+                // Sáng đáp án đúng lên cho người dùng biết
+                allBtns.forEach(b => {
+                    if (b.textContent === correctRef) b.classList.add('correct');
+                });
+            }
+
+            document.getElementById('btnNextQuiz').classList.remove('hidden');
+        }
+
+        function nextQuizQuestion() {
+            currentQuizIndex++;
+            if (currentQuizIndex < quizList.length) {
+                loadQuizQuestion();
+            } else {
+                // Hoàn thành bài quiz
+                const topic = topicsConfig.find(t => t.id === currentTopicId);
+                alert(`🎉 Chúc mừng bạn đã hoàn thành kiểm tra Chủ đề ${topic.id}!\nTổng điểm của bạn: ${quizScore} / ${quizList.length * 10}`);
+                
+                // Nếu điểm đạt từ 50% trở lên, mở khóa chủ đề tiếp theo
+                if (quizScore >= (quizList.length * 10) / 2) {
+                    unlockNextTopic(currentTopicId);
+                }
+                goToScreenModes();
+            }
         }
 
         window.onload = loadDatabase;
