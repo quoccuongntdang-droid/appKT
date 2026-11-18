@@ -22,9 +22,9 @@
 
         /* Màn hình chọn Chế độ học trong Chủ đề */
         .mode-container { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        .btn-mode { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-mode { background: #3498db; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
         .btn-mode:hover { background: #2980b9; }
-        .btn-random-mix { background: #9b59b6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-random-mix { background: #9b59b6; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
         .btn-random-mix:hover { background: #8e44ad; }
         .btn-back { background: #95a5a6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; align-self: flex-start; }
         .btn-back:hover { background: #7f8c8d; }
@@ -82,7 +82,7 @@
             
             <div class="controls" id="lessonSelectContainer">
                 <select id="lessonSelect" onchange="changeLesson()">
-                    <!-- Dropdown danh sách bài học -->
+                    <!-- Dropdown danh sách bài học trong chủ đề -->
                 </select>
             </div>
 
@@ -184,12 +184,9 @@
                 const card = document.createElement('div');
                 card.className = `topic-card ${isUnlocked ? '' : 'locked'}`;
                 
-                let lessonsInTopic = bibleData.slice(topic.start - 1, topic.end);
-                let topicSubTitle = lessonsInTopic.length > 0 ? `${lessonsInTopic[0].title.split(' ')[0]} ... ${lessonsInTopic[lessonsInTopic.length-1].title.split(' ')[0]}` : "";
-
                 card.innerHTML = `
                     <div class="topic-title">${topic.title} (${topic.name})</div>
-                    <div class="topic-desc">Ôn tập các bài học từ bài ${topic.start} đến ${topic.end}</div>
+                    <div class="topic-desc">Ôn tập toàn bộ bài học từ bài ${topic.start} đến ${topic.end}</div>
                     <div><span class="topic-status ${isUnlocked ? 'status-unlocked' : 'status-locked'}">
                         ${isUnlocked ? '🔓 Đã mở khóa' : '🔒 Đã khóa (Cần hoàn thành chủ đề trước)'}
                     </span></div>
@@ -208,7 +205,6 @@
         // --- XỬ LÝ CHẾ ĐỘ HỌC ---
         function getLessonsOfCurrentTopic() {
             const topic = topicsConfig.find(t => t.id === currentTopicId);
-            // Lấy cắt mảng từ bài start đến end trong JSON (index = id - 1)
             return bibleData.slice(topic.start - 1, topic.end);
         }
 
@@ -231,31 +227,25 @@
             // Gom tất cả câu Kinh Thánh của 10 bài trong chủ đề lại và xáo trộn ngẫu nhiên (Fisher-Yates Shuffle)
             let rawLessons = getLessonsOfCurrentTopic();
             activeVerses = [];
-            rawLessons.forEach((lesson, lIdx) => {
+            rawLessons.forEach((lesson) => {
                 lesson.verses.forEach(v => {
                     activeVerses.push({
                         lessonTitle: lesson.title,
                         ref: v.ref,
-                        text: v.text,
-                        originalLessonIndex: topicStartIndex() + lIdx
+                        text: v.text
                     });
                 });
             });
 
-            // Xáo trộn ngẫu nhiên danh sách
+            // Xáo trộn ngẫu nhiên danh sách câu hỏi trong chủ đề
             for (let i = activeVerses.length - 1; i > 0; i--) {
                 let j = Math.floor(Math.random() * (i + 1));
                 [activeVerses[i], activeVerses[j]] = [activeVerses[j], activeVerses[i]];
             }
 
             currentActiveIndex = 0;
-            loadMixCard();
+            loadCardContent();
             showScreen('screenFlashcard');
-        }
-
-        function topicStartIndex() {
-            const topic = topicsConfig.find(t => t.id === currentTopicId);
-            return topic.start - 1;
         }
 
         // --- LOGIC HIỂN THỊ FLASHCARD ---
@@ -266,7 +256,7 @@
             
             topicLessons.forEach((lesson, index) => {
                 let opt = document.createElement('option');
-                opt.value = index; // Index tương đối trong chủ đề
+                opt.value = index; 
                 opt.textContent = lesson.title;
                 select.appendChild(opt);
             });
@@ -296,26 +286,13 @@
             if (activeVerses.length === 0) return;
             const item = activeVerses[currentActiveIndex];
 
-            document.getElementById('frontLessonTitle').textContent = item.lessonTitle;
+            let titlePrefix = (studyMode === 'mix') ? '🔀 [Trộn 10 Bài] ' : '';
+            document.getElementById('frontLessonTitle').textContent = titlePrefix + item.lessonTitle;
             document.getElementById('frontRef').textContent = item.ref;
             document.getElementById('backText').textContent = item.text;
             document.getElementById('backLessonTitle').textContent = item.lessonTitle;
 
             document.getElementById('progressText').textContent = `Câu ${currentActiveIndex + 1} / ${activeVerses.length}`;
-
-            if(isFlipped) flipCard();
-        }
-
-        function loadMixCard() {
-            if (activeVerses.length === 0) return;
-            const item = activeVerses[currentActiveIndex];
-
-            document.getElementById('frontLessonTitle').textContent = `[CHẾ ĐỘ TRỘN ĐỀ] ${item.lessonTitle}`;
-            document.getElementById('frontRef').textContent = item.ref;
-            document.getElementById('backText').textContent = item.text;
-            document.getElementById('backLessonTitle').textContent = item.lessonTitle;
-
-            document.getElementById('progressText').textContent = `Thẻ trộn ${currentActiveIndex + 1} / ${activeVerses.length}`;
 
             if(isFlipped) flipCard();
         }
@@ -330,15 +307,13 @@
             if (currentActiveIndex < activeVerses.length - 1) {
                 currentActiveIndex++;
             } else {
-                currentActiveIndex = 0; // Quay về đầu thẻ
-                // Nếu ở chế độ học theo bài bình thường và ở bài cuối cùng của chủ đề, hoàn thành chủ đề -> Mở khóa chủ đề tiếp theo
+                currentActiveIndex = 0; // Quay về đầu danh sách
+                // Nếu ở chế độ học theo bài bình thường và hoàn thành trọn vẹn chủ đề, tự động mở khóa chủ đề kế tiếp
                 if (studyMode === 'lesson') {
                     unlockNextTopic(currentTopicId);
                 }
             }
-            
-            if (studyMode === 'lesson') loadCardContent();
-            else loadMixCard();
+            loadCardContent();
         }
 
         function prevVerse() {
@@ -347,9 +322,7 @@
             } else {
                 currentActiveIndex = activeVerses.length - 1; 
             }
-
-            if (studyMode === 'lesson') loadCardContent();
-            else loadMixCard();
+            loadCardContent();
         }
 
         window.onload = loadDatabase;
