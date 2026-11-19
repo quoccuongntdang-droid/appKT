@@ -33,7 +33,7 @@
         }
 
         .container.admin-wide {
-            max-width: 920px;
+            max-width: 940px;
         }
 
         h2 {
@@ -168,6 +168,8 @@
         .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 7px; text-align: left; vertical-align: middle; }
         .admin-table th { background-color: #f2f2f2; color: #333; position: sticky; top: 0; z-index: 1; }
+        .chk-col { width: 34px; text-align: center !important; }
+        .row-chk { width: 15px; height: 15px; cursor: pointer; }
 
         .mode-container { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .btn-mode, .btn-random-mix, .btn-quiz-1, .btn-quiz-2, .btn-quiz-3 { color: #fff; border: none; padding: 12px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; text-align: left; width: 100%; }
@@ -282,6 +284,7 @@
                         <table class="admin-table">
                             <thead>
                                 <tr>
+                                    <th class="chk-col"><input type="checkbox" id="checkAllStudents" class="row-chk" onchange="toggleSelectAllStudents(this.checked)" title="Chọn tất cả tài khoản"></th>
                                     <th>Tài khoản</th>
                                     <th>Tiến độ mở bài</th>
                                 </tr>
@@ -313,7 +316,7 @@
 
                         <div class="row-2col">
                             <button type="button" class="btn-warning" onclick="adminResetStudentLock()">🔒 Khóa lại</button>
-                            <button type="button" class="btn-danger" onclick="adminDeleteSelectedStudent()">🗑️ Xóa TK</button>
+                            <button type="button" class="btn-danger" onclick="adminDeleteCheckedStudents()">🗑️ Xóa TK đã tick</button>
                         </div>
 
                         <button type="button" class="btn-info" onclick="refreshAdminAll()">🔄 Làm mới danh sách</button>
@@ -328,6 +331,7 @@
                         <table class="admin-table">
                             <thead>
                                 <tr>
+                                    <th class="chk-col"><input type="checkbox" id="checkAllResults" class="row-chk" onchange="toggleSelectAllResults(this.checked)" title="Chọn tất cả kết quả"></th>
                                     <th>Học viên</th>
                                     <th>Bài kiểm tra</th>
                                     <th>Điểm</th>
@@ -341,6 +345,7 @@
                     <div class="admin-side-panel">
                         <div class="panel-label">Thao tác bảng điểm</div>
                         <button type="button" class="btn-primary" onclick="loadAdminResults()">🔄 Làm mới điểm</button>
+                        <button type="button" class="btn-warning" onclick="adminDeleteCheckedResults()">🗑️ Xóa điểm đã tick</button>
                         <button type="button" class="btn-danger" onclick="adminResetAllResults()">💥 Reset tất cả điểm</button>
                     </div>
                 </div>
@@ -572,6 +577,30 @@
             return Array.from(document.querySelectorAll('.admin-lesson-cb'))
                 .filter(cb => cb.checked)
                 .map(cb => Number(cb.value));
+        }
+
+        function toggleSelectAllStudents(checked) {
+            document.querySelectorAll('.student-row-chk').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function getCheckedStudentUsernames() {
+            return Array.from(document.querySelectorAll('.student-row-chk'))
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        }
+
+        function toggleSelectAllResults(checked) {
+            document.querySelectorAll('.result-row-chk').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function getCheckedResultIds() {
+            return Array.from(document.querySelectorAll('.result-row-chk'))
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
         }
 
         function clearCredentialInputs() {
@@ -980,6 +1009,9 @@
 
         async function loadAdminStudents() {
             try {
+                const allChk = document.getElementById('checkAllStudents');
+                if (allChk) allChk.checked = false;
+
                 const res = await fetch('/api/admin/students');
                 const users = await res.json();
                 adminStudentsCache = Array.isArray(users) ? users : [];
@@ -997,7 +1029,7 @@
                     opt.textContent = '-- Chưa có tài khoản --';
                     select.appendChild(opt);
                     renderAdminLessonCheckboxes([]);
-                    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Chưa có tài khoản học viên nào.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Chưa có tài khoản học viên nào.</td></tr>`;
                     return;
                 }
 
@@ -1010,6 +1042,7 @@
                     const map = u.unlockedByTopic || {};
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
+                        <td class="chk-col"><input type="checkbox" class="row-chk student-row-chk" value="${u.username}"></td>
                         <td><b>${u.username}</b><br><span style="color:#666;font-size:11px;">CĐ mở: ${u.unlockedTopic}/5</span></td>
                         <td style="font-size:11px;line-height:1.45;">
                             CĐ1: ${map["1"]||0}/10 • CĐ2: ${map["2"]||0}/10 • CĐ3: ${map["3"]||0}/10<br>
@@ -1062,19 +1095,48 @@
             await loadAdminStudents();
         }
 
-        async function adminDeleteSelectedStudent() {
-            const username = document.getElementById('adminStudentSelect').value;
-            if (!username) return alert('Chưa chọn tài khoản học viên!');
-            const deleteResults = confirm(`Xóa tài khoản "${username}"? Bấm OK để xóa kèm cả điểm thi của "${username}", hoặc Cancel để chỉ xóa tài khoản.`);
+        async function adminDeleteCheckedStudents() {
+            let targets = getCheckedStudentUsernames();
+            if (!targets.length) {
+                const selectedOne = document.getElementById('adminStudentSelect').value;
+                if (selectedOne) targets = [selectedOne];
+            }
+            if (!targets.length) {
+                return alert('Vui lòng tick chọn ít nhất một tài khoản cần xóa!');
+            }
 
-            const res = await fetch('/api/admin/delete-student', {
+            const deleteResults = confirm(`Xóa ${targets.length} tài khoản (${targets.join(', ')})? Bấm OK để xóa kèm điểm thi của các tài khoản này, hoặc Cancel để chỉ xóa tài khoản.`);
+
+            for (const username of targets) {
+                await fetch('/api/admin/delete-student', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, deleteResults })
+                });
+            }
+
+            alert(`Đã xóa ${targets.length} tài khoản đã chọn.`);
+            await refreshAdminAll();
+        }
+
+        async function adminDeleteCheckedResults() {
+            const ids = getCheckedResultIds();
+            if (!ids.length) {
+                return alert('Vui lòng tick chọn ít nhất một dòng kết quả kiểm tra để xóa!');
+            }
+            if (!confirm(`Xóa ${ids.length} dòng kết quả kiểm tra đã tick?`)) return;
+
+            const res = await fetch('/api/admin/delete-results-bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, deleteResults })
+                body: JSON.stringify({ ids })
             });
             const data = await res.json();
-            alert(data.message || 'Đã xóa tài khoản!');
-            await refreshAdminAll();
+            if (!res.ok || !data.success) {
+                return alert(data.message || 'Không xóa được các dòng đã chọn.');
+            }
+            alert(data.message || 'Đã xóa các dòng kết quả đã tick!');
+            await loadAdminResults();
         }
 
         async function adminDeleteSingleResult(resultId) {
@@ -1106,6 +1168,9 @@
 
         async function loadAdminResults() {
             try {
+                const allChk = document.getElementById('checkAllResults');
+                if (allChk) allChk.checked = false;
+
                 const res = await fetch('/api/admin/results');
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || 'Lỗi tải dữ liệu từ server.');
@@ -1113,13 +1178,14 @@
                 const tbody = document.getElementById('adminResultsTableBody');
                 tbody.innerHTML = '';
                 if (!results.length) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Chưa có kết quả học viên nào gửi về.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Chưa có kết quả học viên nào gửi về.</td></tr>`;
                     return;
                 }
                 results.forEach(r => {
                     const tr = document.createElement('tr');
                     const statusBadge = r.statusText ? ` <span style="color:#c0392b;font-weight:bold;">[${r.statusText}]</span>` : '';
                     tr.innerHTML = `
+                        <td class="chk-col"><input type="checkbox" class="row-chk result-row-chk" value="${r._id}"></td>
                         <td><b>${r.studentName}</b></td>
                         <td>Chủ đề ${r.topicId} (KT ${r.quizType})${r.lessonTitle ? ' - ' + r.lessonTitle : ''}${statusBadge}</td>
                         <td style="color: #27ae60; font-weight: bold;">${r.score} / ${r.total}</td>
