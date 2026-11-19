@@ -260,6 +260,24 @@ app.get('/api/admin/results', async (req, res) => {
     }
 });
 
+// Admin xóa 1 dòng kết quả kiểm tra theo ID
+app.post('/api/admin/delete-result', async (req, res) => {
+    try {
+        const id = String(req.body?.id || '').trim();
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'Thiếu ID bản ghi điểm!' });
+        }
+        const deleted = await BibleQuizResult.findByIdAndDelete(id);
+        if (!deleted) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi điểm này!' });
+        }
+        return res.json({ success: true, message: 'Đã xóa dòng kết quả!' });
+    } catch (err) {
+        console.error('Lỗi xóa dòng điểm:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi khi xóa dòng kết quả!' });
+    }
+});
+
 // Admin reset (xóa) kết quả kiểm tra (tất cả hoặc theo học viên)
 app.post('/api/admin/reset-results', async (req, res) => {
     try {
