@@ -375,6 +375,27 @@ app.post('/api/admin/delete-result', async (req, res) => {
     }
 });
 
+// Admin xóa nhiều dòng kết quả kiểm tra theo danh sách ID
+app.post('/api/admin/delete-results-bulk', async (req, res) => {
+    try {
+        const ids = Array.isArray(req.body?.ids)
+            ? req.body.ids.map(x => String(x || '').trim()).filter(Boolean)
+            : [];
+        if (!ids.length) {
+            return res.status(400).json({ success: false, message: 'Chưa chọn dòng kết quả nào để xóa!' });
+        }
+        const deleted = await BibleQuizResult.deleteMany({ _id: { $in: ids } });
+        return res.json({
+            success: true,
+            deletedCount: deleted.deletedCount,
+            message: `Đã xóa ${deleted.deletedCount} kết quả kiểm tra đã chọn.`
+        });
+    } catch (err) {
+        console.error('Lỗi xóa nhiều dòng điểm:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi khi xóa các dòng kết quả!' });
+    }
+});
+
 app.post('/api/admin/reset-results', async (req, res) => {
     try {
         const studentName = String(req.body?.studentName || '').trim().toLowerCase();
