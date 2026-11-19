@@ -1,12 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const crypto = require('crypto');
 const app = express();
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Chuỗi kết nối MongoDB Atlas trỏ vào database riêng 'bible_lms'
 const DEFAULT_MONGO_URI = "mongodb+srv://quoccuongdn96vn_db_user:Cuong123@cluster0.rjqeg1h.mongodb.net/bible_lms?retryWrites=true&w=majority";
 const MONGO_URI = process.env.MONGO_URI || DEFAULT_MONGO_URI;
 
@@ -14,11 +14,31 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Đã kết nối MongoDB thành công (DB: bible_lms)!'))
     .catch(err => console.error('❌ Lỗi kết nối MongoDB:', err.message));
 
-// Schema lưu kết quả kiểm tra của học viên
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(String(password)).digest('hex');
+}
+
+// Schema tài khoản học viên & tiến độ mở khóa theo chủ đề + từng bài
+// unlockedByTopic: { "1": 1, "2": 0, "3": 0, "4": 0, "5": 0 } -> số bài đã mở khóa trong từng chủ đề (0..10)
+const studentUserSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    passwordHash: { type: String, required: true },
+    unlockedTopic: { type: Number, default: 1, min: 1, max: 5 },
+    unlockedByTopic: {
+        type: Map,
+        of: Number,
+        default: () => ({ "1": 1, "2": 0, "3": 0, "4": 0, "5": 0 })
+    }
+}, { timestamps: true });
+
+const StudentUser = mongoose.model('StudentUser', studentUserSchema);
+
+// Schema lưu kết quả kiểm tra
 const bibleQuizResultSchema = new mongoose.Schema({
     studentName: { type: String, required: true, trim: true },
     topicId: { type: Number, required: true },
     quizType: { type: Number, required: true },
+    lessonTitle: { type: String, default: '' },
     score: { type: Number, required: true },
     total: { type: Number, required: true },
     date: { type: String, default: () => new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) }
@@ -26,9 +46,150 @@ const bibleQuizResultSchema = new mongoose.Schema({
 
 const BibleQuizResult = mongoose.model('BibleQuizResult', bibleQuizResultSchema);
 
-// Trang chủ
+// Chuẩn hóa tiến độ học viên (đảm bảo luôn đủ 5 chủ đề, mỗi chủ đề tối đa 10 bài)
+function normalizeProgress(userDoc) {
+    const mapObj = userDoc.unlockedByTopic instanceof Map
+        ? Object.fromEntries(userDoc.unlockedByTopic)
+        : (userDoc.unlockedByTopic || {});
+
+    const progress = {
+        "1": Math.min(10, Math.max(1, Number(mapObj["1"] ?? 1))),
+        "2": Math.min(10, Math.max(0, Number(mapObj["2"] ?? 0))),
+        "3": Math.min(10, Math.max(0, Number(mapObj["3"] ?? 0))),
+        "4": Math.min(10, Math.max(0, Number(mapObj["4"] ?? 0))),
+        "5": Math.min(10, Math.max(0, Number(mapObj["5"] ?? 0)))
+    };
+
+    // Nếu chủ đề i+1 đã mở thì chủ đề i chắc chắn đủ 10 bài
+    let unlockedTopic = Number(userDoc.unlockedTopic || 1);
+    for (let t = 1; t < unlockedTopic; t++) {
+        progress[String(t)] = 10;
+    }
+    if (progress[String(unlockedTopic)] === 0) {
+        progress[String(unlockedTopic)] = 1;
+    }
+
+    return { unlockedTopic, unlockedByTopic: progress };
+}
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Đăng ký tài khoản học viên
+app.post('/api/student/register', async (req, res) => {
+    try {
+        const username = String(req.body?.username || '').trim().toLowerCase();
+        const password = String(req.body?.password || '');
+
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ tên tài khoản và mật khẩu!' });
+        }
+        if (password.length < 4) {
+            return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 4 ký tự!' });
+        }
+
+        const existed = await StudentUser.findOne({ username });
+        if (existed) {
+            return res.status(409).json({ success: false, message: 'Tên tài khoản này đã tồn tại!' });
+        }
+
+        const newUser = new StudentUser({
+            username,
+            passwordHash: hashPassword(password),
+            unlockedTopic: 1,
+            unlockedByTopic: { "1": 1, "2": 0, "3": 0, "4": 0, "5": 0 }
+        });
+        await newUser.save();
+
+        const prog = normalizeProgress(newUser);
+        return res.json({
+            success: true,
+            message: 'Đăng ký tài khoản thành công!',
+            student: { username: newUser.username, ...prog }
+        });
+    } catch (err) {
+        console.error('Lỗi đăng ký học viên:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đăng ký!' });
+    }
+});
+
+// Đăng nhập tài khoản học viên
+app.post('/api/student/login', async (req, res) => {
+    try {
+        const username = String(req.body?.username || '').trim().toLowerCase();
+        const password = String(req.body?.password || '');
+
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Vui lòng nhập tên tài khoản và mật khẩu!' });
+        }
+
+        const user = await StudentUser.findOne({ username });
+        if (!user || user.passwordHash !== hashPassword(password)) {
+            return res.status(401).json({ success: false, message: 'Sai tên tài khoản hoặc mật khẩu!' });
+        }
+
+        const prog = normalizeProgress(user);
+        return res.json({
+            success: true,
+            message: 'Đăng nhập thành công!',
+            student: { username: user.username, ...prog }
+        });
+    } catch (err) {
+        console.error('Lỗi đăng nhập học viên:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đăng nhập!' });
+    }
+});
+
+// API cập nhật tiến độ mở khóa từng bài / chủ đề của học viên
+// completedLessonCountInTopic: số bài đã mở trong topicId (1..10)
+app.post('/api/student/progress', async (req, res) => {
+    try {
+        const username = String(req.body?.username || '').trim().toLowerCase();
+        const topicId = Number(req.body?.topicId);
+        const unlockedLessonsInTopic = Number(req.body?.unlockedLessonsInTopic);
+        const totalLessonsInTopic = Number(req.body?.totalLessonsInTopic || 10);
+
+        if (!username || !topicId) {
+            return res.status(400).json({ success: false, message: 'Thiếu thông tin tiến độ!' });
+        }
+
+        const user = await StudentUser.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản học viên!' });
+        }
+
+        const prog = normalizeProgress(user);
+        const key = String(topicId);
+        const clampedLessons = Math.min(totalLessonsInTopic, Math.max(prog.unlockedByTopic[key] || 1, unlockedLessonsInTopic));
+        prog.unlockedByTopic[key] = clampedLessons;
+
+        let nextTopicUnlocked = false;
+        // Nếu đã mở khóa hết tất cả bài của chủ đề hiện tại -> mở chủ đề tiếp theo (bắt đầu từ bài 1)
+        if (clampedLessons >= totalLessonsInTopic && topicId < 5) {
+            const nextKey = String(topicId + 1);
+            if (prog.unlockedTopic < topicId + 1) {
+                prog.unlockedTopic = topicId + 1;
+                nextTopicUnlocked = true;
+            }
+            if ((prog.unlockedByTopic[nextKey] || 0) < 1) {
+                prog.unlockedByTopic[nextKey] = 1;
+            }
+        }
+
+        user.unlockedTopic = prog.unlockedTopic;
+        user.unlockedByTopic = prog.unlockedByTopic;
+        await user.save();
+
+        return res.json({
+            success: true,
+            nextTopicUnlocked,
+            student: { username: user.username, ...prog }
+        });
+    } catch (err) {
+        console.error('Lỗi cập nhật tiến độ:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi lưu tiến độ học tập!' });
+    }
 });
 
 // API Đăng nhập Admin
@@ -43,10 +204,10 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị!' });
 });
 
-// API Nhận kết quả Quiz từ học viên và lưu vào MongoDB
+// API Nhận kết quả Quiz từ học viên
 app.post('/api/submit-quiz', async (req, res) => {
     try {
-        const { studentName, topicId, quizType, score, total, date } = req.body || {};
+        const { studentName, topicId, quizType, lessonTitle, score, total, date } = req.body || {};
 
         if (!studentName || score === undefined) {
             return res.status(400).json({ success: false, message: 'Thiếu thông tin học viên hoặc điểm số!' });
@@ -56,6 +217,7 @@ app.post('/api/submit-quiz', async (req, res) => {
             studentName: String(studentName).trim(),
             topicId,
             quizType,
+            lessonTitle: lessonTitle || '',
             score,
             total,
             ...(date ? { date } : {})
@@ -69,7 +231,7 @@ app.post('/api/submit-quiz', async (req, res) => {
     }
 });
 
-// API Cho Admin xem danh sách kết quả từ MongoDB
+// API Cho Admin xem danh sách kết quả
 app.get('/api/admin/results', async (req, res) => {
     try {
         const results = await BibleQuizResult.find().sort({ createdAt: -1 }).limit(200);
