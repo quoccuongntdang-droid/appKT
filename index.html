@@ -33,7 +33,7 @@
         }
 
         .container.admin-wide {
-            max-width: 840px;
+            max-width: 880px;
         }
 
         h2 {
@@ -116,11 +116,11 @@
             background: #27ae60;
             color: #fff;
             border: none;
-            padding: 12px 14px;
+            padding: 11px 14px;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             text-align: center;
         }
         .btn-primary:hover { background: #219653; }
@@ -157,8 +157,8 @@
         .admin-section { border: 1px solid #e0e6ed; border-radius: 10px; padding: 14px; margin-top: 14px; background: #fafbfc; width: 100%; }
         .admin-section h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
         .admin-table-layout { display: flex; gap: 12px; align-items: flex-start; width: 100%; }
-        .admin-table-wrap { flex: 1 1 auto; min-width: 0; max-height: 320px; overflow: auto; background: #fff; border-radius: 8px; }
-        .admin-side-panel { flex: 0 0 215px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 10px; border-radius: 8px; }
+        .admin-table-wrap { flex: 1 1 auto; min-width: 0; max-height: 340px; overflow: auto; background: #fff; border-radius: 8px; }
+        .admin-side-panel { flex: 0 0 245px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 10px; border-radius: 8px; }
         .row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
         .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 7px; text-align: left; vertical-align: middle; }
@@ -286,26 +286,15 @@
                         </table>
                     </div>
                     <div class="admin-side-panel">
-                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Mở/Khóa theo chủ đề</div>
-                        <select id="adminTargetTopicSelect">
-                            <option value="1">Chủ Đề 1</option>
-                            <option value="2">Chủ Đề 2</option>
-                            <option value="3">Chủ Đề 3</option>
-                            <option value="4">Chủ Đề 4</option>
-                            <option value="5">Chủ Đề 5</option>
+                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Chọn chủ đề & bài để Mở / Khóa</div>
+                        <select id="adminTargetTopicSelect" onchange="populateAdminLessonSelect()">
+                            <option value="1">Chủ Đề 1 (Bài 1–10)</option>
+                            <option value="2">Chủ Đề 2 (Bài 11–20)</option>
+                            <option value="3">Chủ Đề 3 (Bài 21–30)</option>
+                            <option value="4">Chủ Đề 4 (Bài 31–40)</option>
+                            <option value="5">Chủ Đề 5 (Bài 41–50)</option>
                         </select>
-                        <select id="adminTargetLessonsSelect">
-                            <option value="1">Mở 1 bài</option>
-                            <option value="2">Mở 2 bài</option>
-                            <option value="3">Mở 3 bài</option>
-                            <option value="4">Mở 4 bài</option>
-                            <option value="5">Mở 5 bài</option>
-                            <option value="6">Mở 6 bài</option>
-                            <option value="7">Mở 7 bài</option>
-                            <option value="8">Mở 8 bài</option>
-                            <option value="9">Mở 9 bài</option>
-                            <option value="10">Mở đủ 10 bài</option>
-                        </select>
+                        <select id="adminTargetLessonSelect"></select>
                         <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="refreshAdminAll()">🔄 Làm mới</button>
                     </div>
                 </div>
@@ -454,6 +443,21 @@
             { id: 4, title: "Chủ Đề 4", name: "Bài 31 đến Bài 40", start: 31, end: 40 },
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
+
+        function populateAdminLessonSelect() {
+            const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
+            const lessonSelect = document.getElementById('adminTargetLessonSelect');
+            lessonSelect.innerHTML = '';
+            const lessons = getLessonsOfTopic(topicId);
+            const count = lessons.length || 10;
+
+            for (let i = 0; i < count; i++) {
+                const opt = document.createElement('option');
+                opt.value = i + 1; // số thứ tự bài trong chủ đề (1..10)
+                opt.textContent = lessons[i]?.title ? `${i + 1}. ${lessons[i].title}` : `Bài ${i + 1}`;
+                lessonSelect.appendChild(opt);
+            }
+        }
 
         function clearCredentialInputs() {
             ['studentUsernameInput', 'studentPasswordInput', 'adminUser', 'adminPass'].forEach(id => {
@@ -670,6 +674,7 @@
                 const response = await fetch('data.json');
                 if (!response.ok) throw new Error('Không thể tải file dữ liệu');
                 bibleData = await response.json();
+                populateAdminLessonSelect();
                 document.getElementById('globalProgress').textContent = `Đã tải ${bibleData.length} bài học thành công!`;
 
                 if (sessionStorage.getItem('adminSessionBible') === 'true') {
@@ -726,6 +731,7 @@
                     isAdminLoggedIn = true;
                     sessionStorage.setItem('adminSessionBible', 'true');
                     updateGlobalSessionBar();
+                    populateAdminLessonSelect();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                 } else {
@@ -764,8 +770,8 @@
                         </td>
                         <td>
                             <div class="row-actions">
-                                <button type="button" class="btn-info" onclick="adminRowApplyProgress('${u.username}')">Mở/Khóa</button>
-                                <button type="button" class="btn-warning" onclick="adminRowResetLock('${u.username}')">Khóa lại</button>
+                                <button type="button" class="btn-info" onclick="adminRowUnlockToLesson('${u.username}')">Mở tới bài</button>
+                                <button type="button" class="btn-warning" onclick="adminRowLockFromLesson('${u.username}')">Khóa từ bài</button>
                                 <button type="button" class="btn-danger" onclick="adminRowDeleteStudent('${u.username}')">Xóa TK</button>
                             </div>
                         </td>
@@ -777,28 +783,45 @@
             }
         }
 
-        async function adminRowApplyProgress(username) {
+        // Mở khóa từ đầu chủ đề tới bài đang chọn trong select
+        async function adminRowUnlockToLesson(username) {
             const targetTopic = Number(document.getElementById('adminTargetTopicSelect').value);
-            const targetLessons = Number(document.getElementById('adminTargetLessonsSelect').value);
+            const selectedLessonOrder = Number(document.getElementById('adminTargetLessonSelect').value);
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, actionType: 'custom', targetTopic, targetLessons })
+                body: JSON.stringify({
+                    username,
+                    actionType: 'custom',
+                    targetTopic,
+                    targetLessons: selectedLessonOrder
+                })
             });
             const data = await res.json();
-            alert(data.message || 'Đã cập nhật!');
+            alert(data.message || 'Đã mở khóa tới bài được chọn!');
             await loadAdminStudents();
         }
 
-        async function adminRowResetLock(username) {
-            if (!confirm(`Reset khóa lại tiến độ của "${username}" về mặc định (Chủ đề 1 - 1 bài)?`)) return;
+        // Khóa lại từ bài đang chọn trong select trở đi (chỉ mở tới bài ngay trước bài được chọn)
+        async function adminRowLockFromLesson(username) {
+            const targetTopic = Number(document.getElementById('adminTargetTopicSelect').value);
+            const selectedLessonOrder = Number(document.getElementById('adminTargetLessonSelect').value);
+            const openLessonsBeforeSelected = targetTopic === 1
+                ? Math.max(1, selectedLessonOrder - 1)
+                : Math.max(0, selectedLessonOrder - 1);
+
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, actionType: 'reset_lock_all' })
+                body: JSON.stringify({
+                    username,
+                    actionType: 'custom',
+                    targetTopic,
+                    targetLessons: openLessonsBeforeSelected
+                })
             });
             const data = await res.json();
-            alert(data.message || 'Đã reset khóa!');
+            alert(`Đã khóa từ bài ${selectedLessonOrder} trở đi của Chủ Đề ${targetTopic} cho "${username}".`);
             await loadAdminStudents();
         }
 
@@ -874,6 +897,9 @@
             clearCredentialInputs();
             const container = document.getElementById('mainContainer');
             container.classList.toggle('admin-wide', screenId === 'screenAdminDashboard');
+            if (screenId === 'screenAdminDashboard') {
+                populateAdminLessonSelect();
+            }
             ['screenLogin', 'screenAdminLogin', 'screenAdminDashboard', 'screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz']
                 .forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
