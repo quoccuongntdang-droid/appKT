@@ -6,17 +6,13 @@ const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Chuỗi kết nối MongoDB Atlas (đặt trong Environment của Render với tên biến MONGO_URI)
-// Mẹo: Nếu dùng chung cluster với chiến dịch 60 ngày, đổi tên DB sau dấu '/' thành bible_lms cho gọn
-const MONGO_URI = process.env.MONGO_URI;
+// Chuỗi kết nối MongoDB Atlas trỏ vào database riêng 'bible_lms'
+const DEFAULT_MONGO_URI = "mongodb+srv://quoccuongdn96vn_db_user:Cuong123@cluster0.rjqeg1h.mongodb.net/bible_lms?retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI || DEFAULT_MONGO_URI;
 
-if (!MONGO_URI) {
-    console.warn('⚠️ Chưa cấu hình biến môi trường MONGO_URI!');
-} else {
-    mongoose.connect(MONGO_URI)
-        .then(() => console.log('✅ Đã kết nối MongoDB thành công!'))
-        .catch(err => console.error('❌ Lỗi kết nối MongoDB:', err.message));
-}
+mongoose.connect(MONGO_URI)
+    .then(() => console.log('✅ Đã kết nối MongoDB thành công (DB: bible_lms)!'))
+    .catch(err => console.error('❌ Lỗi kết nối MongoDB:', err.message));
 
 // Schema lưu kết quả kiểm tra của học viên
 const bibleQuizResultSchema = new mongoose.Schema({
