@@ -33,7 +33,7 @@
         }
 
         .container.admin-wide {
-            max-width: 900px;
+            max-width: 920px;
         }
 
         h2 {
@@ -116,18 +116,19 @@
             background: #27ae60;
             color: #fff;
             border: none;
-            padding: 11px 14px;
+            padding: 10px 12px;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             text-align: center;
         }
         .btn-primary:hover { background: #219653; }
 
-        .btn-danger { background: #e74c3c; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .btn-warning { background: #e67e22; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-        .btn-info { background: #2980b9; color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-danger { background: #e74c3c; color: #fff; border: none; padding: 8px 10px; border-radius: 7px; font-weight: bold; cursor: pointer; font-size: 12px; width: 100%; }
+        .btn-warning { background: #e67e22; color: #fff; border: none; padding: 8px 10px; border-radius: 7px; font-weight: bold; cursor: pointer; font-size: 12px; width: 100%; }
+        .btn-info { background: #2980b9; color: #fff; border: none; padding: 8px 10px; border-radius: 7px; font-weight: bold; cursor: pointer; font-size: 12px; width: 100%; }
+        .btn-sm-danger { background: #e74c3c; color: #fff; border: none; padding: 5px 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px; }
 
         .admin-link-btn {
             background: none;
@@ -157,12 +158,13 @@
         .admin-section { border: 1px solid #e0e6ed; border-radius: 10px; padding: 14px; margin-top: 14px; background: #fafbfc; width: 100%; }
         .admin-section h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
         .admin-table-layout { display: flex; gap: 12px; align-items: flex-start; width: 100%; }
-        .admin-table-wrap { flex: 1 1 auto; min-width: 0; max-height: 340px; overflow: auto; background: #fff; border-radius: 8px; }
-        .admin-side-panel { flex: 0 0 270px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 10px; border-radius: 8px; }
-        .lesson-checklist { max-height: 210px; overflow-y: auto; border: 1px solid #e5e8eb; border-radius: 8px; padding: 8px; background: #fafbfc; display: flex; flex-direction: column; gap: 6px; }
+        .admin-table-wrap { flex: 1 1 auto; min-width: 0; max-height: 360px; overflow: auto; background: #fff; border-radius: 8px; }
+        .admin-side-panel { flex: 0 0 280px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 12px; border-radius: 8px; }
+        .panel-label { font-size: 12px; font-weight: bold; color: #2c3e50; }
+        .lesson-checklist { max-height: 190px; overflow-y: auto; border: 1px solid #e5e8eb; border-radius: 8px; padding: 8px; background: #fafbfc; display: flex; flex-direction: column; gap: 6px; }
         .lesson-check-item { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.35; cursor: pointer; color: #2c3e50; }
         .lesson-check-item input { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
-        .row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+        .row-2col { display: flex; gap: 6px; width: 100%; }
         .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 7px; text-align: left; vertical-align: middle; }
         .admin-table th { background-color: #f2f2f2; color: #333; position: sticky; top: 0; z-index: 1; }
@@ -177,7 +179,7 @@
 
         .btn-back { background: #95a5a6; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 12px; align-self: flex-start; }
         .controls { margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        select { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; background: #fff; }
+        select { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; background: #fff; }
 
         .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; min-height: 285px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; }
@@ -282,27 +284,39 @@
                                 <tr>
                                     <th>Tài khoản</th>
                                     <th>Tiến độ mở bài</th>
-                                    <th>Thao tác từng dòng</th>
                                 </tr>
                             </thead>
                             <tbody id="adminStudentsTableBody"></tbody>
                         </table>
                     </div>
                     <div class="admin-side-panel">
-                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Tick chọn bài để Mở / Khóa</div>
-                        <select id="adminTargetTopicSelect" onchange="renderAdminLessonCheckboxes()">
+                        <div class="panel-label">Chọn tài khoản học viên</div>
+                        <select id="adminStudentSelect" onchange="onAdminStudentOrTopicChange()"></select>
+
+                        <div class="panel-label">Chọn chủ đề & tick bài Mở / Khóa</div>
+                        <select id="adminTargetTopicSelect" onchange="onAdminStudentOrTopicChange()">
                             <option value="1">Chủ Đề 1 (Bài 1–10)</option>
                             <option value="2">Chủ Đề 2 (Bài 11–20)</option>
                             <option value="3">Chủ Đề 3 (Bài 21–30)</option>
                             <option value="4">Chủ Đề 4 (Bài 31–40)</option>
                             <option value="5">Chủ Đề 5 (Bài 41–50)</option>
                         </select>
+
                         <div class="lesson-checklist" id="adminLessonChecklist"></div>
-                        <div class="row-actions">
-                            <button type="button" class="btn-info" style="flex:1;" onclick="toggleAllAdminCheckboxes(true)">Tick hết</button>
-                            <button type="button" class="btn-warning" style="flex:1;" onclick="toggleAllAdminCheckboxes(false)">Bỏ tick</button>
+
+                        <div class="row-2col">
+                            <button type="button" class="btn-info" onclick="toggleAllAdminCheckboxes(true)">Tick hết</button>
+                            <button type="button" class="btn-warning" onclick="toggleAllAdminCheckboxes(false)">Bỏ tick</button>
                         </div>
-                        <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="refreshAdminAll()">🔄 Làm mới danh sách</button>
+
+                        <button type="button" class="btn-primary" onclick="adminSaveCheckedLessons()">💾 Lưu bài tick</button>
+
+                        <div class="row-2col">
+                            <button type="button" class="btn-warning" onclick="adminResetStudentLock()">🔒 Khóa lại</button>
+                            <button type="button" class="btn-danger" onclick="adminDeleteSelectedStudent()">🗑️ Xóa TK</button>
+                        </div>
+
+                        <button type="button" class="btn-info" onclick="refreshAdminAll()">🔄 Làm mới danh sách</button>
                     </div>
                 </div>
             </div>
@@ -325,8 +339,8 @@
                         </table>
                     </div>
                     <div class="admin-side-panel">
-                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Thao tác bảng điểm</div>
-                        <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="loadAdminResults()">🔄 Làm mới điểm</button>
+                        <div class="panel-label">Thao tác bảng điểm</div>
+                        <button type="button" class="btn-primary" onclick="loadAdminResults()">🔄 Làm mới điểm</button>
                         <button type="button" class="btn-danger" onclick="adminResetAllResults()">💥 Reset tất cả điểm</button>
                     </div>
                 </div>
@@ -443,7 +457,6 @@
         let isAdminLoggedIn = false;
         let awaySinceTimestamp = null;
         let adminStudentsCache = [];
-        let currentScreenId = 'screenLogin';
 
         const screenToPathMap = {
             screenLogin: '/login',
@@ -486,6 +499,14 @@
                     window.history.pushState({ screenId }, '', targetPath);
                 }
             }
+        }
+
+        function onAdminStudentOrTopicChange() {
+            const username = document.getElementById('adminStudentSelect').value;
+            const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
+            const user = adminStudentsCache.find(u => u.username === username);
+            const checkedArr = user?.lessonsByTopic?.[String(topicId)] || [];
+            renderAdminLessonCheckboxes(checkedArr);
         }
 
         function renderAdminLessonCheckboxes(preselectedIndexes = null) {
@@ -741,7 +762,6 @@
             document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
             document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
             document.getElementById('btnStudentAuth').textContent = mode === 'login' ? 'Đăng Nhập 🚀' : 'Đăng Ký Ngay ✨';
-            updateAddressBarForScreen(mode === 'register' ? 'screenLogin' : 'screenLogin', false);
             if (mode === 'register') {
                 window.history.pushState({ screenId: 'screenLogin', authMode: 'register' }, '', '/register');
             } else {
@@ -796,7 +816,10 @@
 
                 const requestedScreenFromUrl = pathToScreenMap[window.location.pathname] || null;
                 if (window.location.pathname === '/register') {
-                    switchAuthTab('register');
+                    authMode = 'register';
+                    document.getElementById('tabLogin').classList.remove('active');
+                    document.getElementById('tabRegister').classList.add('active');
+                    document.getElementById('btnStudentAuth').textContent = 'Đăng Ký Ngay ✨';
                 }
 
                 if (sessionStorage.getItem('adminSessionBible') === 'true') {
@@ -882,7 +905,6 @@
                     isAdminLoggedIn = true;
                     sessionStorage.setItem('adminSessionBible', 'true');
                     updateGlobalSessionBar();
-                    renderAdminLessonCheckboxes();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                 } else {
@@ -902,52 +924,60 @@
                 const res = await fetch('/api/admin/students');
                 const users = await res.json();
                 adminStudentsCache = Array.isArray(users) ? users : [];
+
+                const select = document.getElementById('adminStudentSelect');
+                const prevSelected = select.value;
+                select.innerHTML = '';
+
                 const tbody = document.getElementById('adminStudentsTableBody');
                 tbody.innerHTML = '';
 
                 if (!adminStudentsCache.length) {
-                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Chưa có tài khoản học viên nào.</td></tr>`;
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '-- Chưa có tài khoản --';
+                    select.appendChild(opt);
+                    renderAdminLessonCheckboxes([]);
+                    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Chưa có tài khoản học viên nào.</td></tr>`;
                     return;
                 }
 
                 adminStudentsCache.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.username;
+                    opt.textContent = `${u.username} (CĐ ${u.unlockedTopic}/5)`;
+                    select.appendChild(opt);
+
                     const map = u.unlockedByTopic || {};
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><b>${u.username}</b><br><span style="color:#666;font-size:11px;">CĐ mở: ${u.unlockedTopic}/5</span></td>
-                        <td style="font-size:11px;line-height:1.4;">
+                        <td style="font-size:11px;line-height:1.45;">
                             CĐ1: ${map["1"]||0}/10 • CĐ2: ${map["2"]||0}/10 • CĐ3: ${map["3"]||0}/10<br>
                             CĐ4: ${map["4"]||0}/10 • CĐ5: ${map["5"]||0}/10
-                        </td>
-                        <td>
-                            <div class="row-actions">
-                                <button type="button" class="btn-info" onclick="adminLoadStudentTopicChecks('${u.username}')">Nạp tick</button>
-                                <button type="button" class="btn-primary" style="width:auto;padding:7px 10px;font-size:12px;" onclick="adminSaveCheckedLessons('${u.username}')">Lưu bài tick</button>
-                                <button type="button" class="btn-warning" onclick="adminRowResetLock('${u.username}')">Khóa lại</button>
-                                <button type="button" class="btn-danger" onclick="adminRowDeleteStudent('${u.username}')">Xóa TK</button>
-                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
+
+                if (prevSelected && adminStudentsCache.some(u => u.username === prevSelected)) {
+                    select.value = prevSelected;
+                } else {
+                    select.value = adminStudentsCache[0].username;
+                }
+
+                onAdminStudentOrTopicChange();
             } catch (e) {
                 console.error('Lỗi tải danh sách học viên:', e);
             }
         }
 
-        // Nạp trạng thái bài đang mở của học viên + chủ đề đã chọn vào các ô checkbox
-        function adminLoadStudentTopicChecks(username) {
-            const user = adminStudentsCache.find(u => u.username === username);
-            const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
-            const checkedArr = user?.lessonsByTopic?.[String(topicId)] || [];
-            renderAdminLessonCheckboxes(checkedArr);
-            alert(`Đã nạp ${checkedArr.length} bài đang mở của "${username}" ở Chủ Đề ${topicId}. Hãy tick/bỏ tick rồi bấm "Lưu bài tick".`);
-        }
-
-        // Lưu danh sách các bài đang tick mở/khóa cho học viên
-        async function adminSaveCheckedLessons(username) {
+        async function adminSaveCheckedLessons() {
+            const username = document.getElementById('adminStudentSelect').value;
+            if (!username) return alert('Chưa chọn tài khoản học viên!');
             const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
             const checkedIndexes = getCheckedAdminLessonIndexes();
+
             const res = await fetch('/api/admin/set-checked-lessons', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -958,20 +988,26 @@
             await loadAdminStudents();
         }
 
-        async function adminRowResetLock(username) {
-            if (!confirm(`Reset khóa lại tiến độ của "${username}" về mặc định (Chủ đề 1 - Bài 1)?`)) return;
+        async function adminResetStudentLock() {
+            const username = document.getElementById('adminStudentSelect').value;
+            if (!username) return alert('Chưa chọn tài khoản học viên!');
+            if (!confirm(`Khóa lại toàn bộ tiến độ của "${username}" về mặc định (Chủ đề 1 - Bài 1)?`)) return;
+
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, actionType: 'reset_lock_all' })
             });
             const data = await res.json();
-            alert(data.message || 'Đã reset khóa!');
+            alert(data.message || 'Đã khóa lại tiến độ!');
             await loadAdminStudents();
         }
 
-        async function adminRowDeleteStudent(username) {
+        async function adminDeleteSelectedStudent() {
+            const username = document.getElementById('adminStudentSelect').value;
+            if (!username) return alert('Chưa chọn tài khoản học viên!');
             const deleteResults = confirm(`Xóa tài khoản "${username}"? Bấm OK để xóa kèm cả điểm thi của "${username}", hoặc Cancel để chỉ xóa tài khoản.`);
+
             const res = await fetch('/api/admin/delete-student', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1029,7 +1065,7 @@
                         <td>Chủ đề ${r.topicId} (KT ${r.quizType})${r.lessonTitle ? ' - ' + r.lessonTitle : ''}${statusBadge}</td>
                         <td style="color: #27ae60; font-weight: bold;">${r.score} / ${r.total}</td>
                         <td style="font-size: 11px; color: #666;">${r.date}</td>
-                        <td><button type="button" class="btn-danger" onclick="adminDeleteSingleResult('${r._id}')">Xóa</button></td>
+                        <td><button type="button" class="btn-sm-danger" onclick="adminDeleteSingleResult('${r._id}')">Xóa</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -1039,7 +1075,6 @@
         }
 
         function showScreen(screenId, replaceUrl = false) {
-            currentScreenId = screenId;
             clearCredentialInputs();
             const container = document.getElementById('mainContainer');
             container.classList.toggle('admin-wide', screenId === 'screenAdminDashboard');
