@@ -435,6 +435,14 @@
         const SECONDS_PER_QUESTION = 60;
         const AWAY_LOGOUT_SECONDS = 60;
 
+        const STORAGE_KEYS = {
+            student: 'bible_persistent_student_v1',
+            admin: 'bible_persistent_admin_v1',
+            awaySince: 'bible_away_since_v1',
+            forceUnlock: 'bible_force_unlock_v1',
+            navState: 'bible_nav_state_v1'
+        };
+
         let bibleData = [];
         let currentTopicId = 1;
         let currentLessonRelativeIndex = 0;
@@ -489,6 +497,27 @@
             { id: 4, title: "Chủ Đề 4", name: "Bài 31 đến Bài 40", start: 31, end: 40 },
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
+
+        function saveNavState(screenId) {
+            localStorage.setItem(STORAGE_KEYS.navState, JSON.stringify({
+                screenId,
+                currentTopicId,
+                currentLessonRelativeIndex,
+                studyMode,
+                activeQuizType,
+                selectedLessonForQuizIndex
+            }));
+        }
+
+        function loadSavedNavState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEYS.navState);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch {
+                return null;
+            }
+        }
 
         function updateAddressBarForScreen(screenId, replace = false) {
             const targetPath = screenToPathMap[screenId] || '/';
@@ -553,11 +582,11 @@
         }
 
         function clearAllAuthStorage() {
-            sessionStorage.removeItem('activeStudentSessionBible');
-            sessionStorage.removeItem('adminSessionBible');
-            sessionStorage.removeItem('awaySinceBible');
-            localStorage.removeItem('loggedInStudentObjBible');
-            localStorage.removeItem('lastActiveTimeBible');
+            localStorage.removeItem(STORAGE_KEYS.student);
+            localStorage.removeItem(STORAGE_KEYS.admin);
+            localStorage.removeItem(STORAGE_KEYS.awaySince);
+            localStorage.removeItem(STORAGE_KEYS.navState);
+            sessionStorage.clear();
         }
 
         function logoutAndReload(reasonMessage = '') {
@@ -576,17 +605,17 @@
             if (!currentStudent && !isAdminLoggedIn) return;
             if (!awaySinceTimestamp) {
                 awaySinceTimestamp = Date.now();
-                sessionStorage.setItem('awaySinceBible', String(awaySinceTimestamp));
+                localStorage.setItem(STORAGE_KEYS.awaySince, String(awaySinceTimestamp));
             }
         }
 
         function checkTabReturnTimeout() {
             if (!currentStudent && !isAdminLoggedIn) return;
-            const savedAway = awaySinceTimestamp || Number(sessionStorage.getItem('awaySinceBible') || 0);
+            const savedAway = awaySinceTimestamp || Number(localStorage.getItem(STORAGE_KEYS.awaySince) || 0);
             if (savedAway) {
                 const elapsedSec = (Date.now() - savedAway) / 1000;
                 awaySinceTimestamp = null;
-                sessionStorage.removeItem('awaySinceBible');
+                localStorage.removeItem(STORAGE_KEYS.awaySince);
                 if (elapsedSec >= AWAY_LOGOUT_SECONDS) {
                     logoutAndReload(`🔒 Bạn đã rời khỏi tab/ứng dụng quá ${AWAY_LOGOUT_SECONDS} giây. Hệ thống đã tự động đăng xuất.`);
                 }
@@ -609,10 +638,10 @@
             const text = document.getElementById('globalSessionText');
             if (isAdminLoggedIn) {
                 bar.classList.remove('hidden');
-                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
+                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (giữ đăng nhập khi refresh • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
             } else if (currentStudent) {
                 bar.classList.remove('hidden');
-                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
+                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (giữ đăng nhập khi refresh • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
             } else {
                 bar.classList.add('hidden');
             }
@@ -652,11 +681,11 @@
         }
 
         function isForceUnlocked() {
-            return sessionStorage.getItem('forceUnlockAllBible') === 'true';
+            return localStorage.getItem(STORAGE_KEYS.forceUnlock) === 'true';
         }
 
         function toggleForceUnlock() {
-            sessionStorage.setItem('forceUnlockAllBible', String(!isForceUnlocked()));
+            localStorage.setItem(STORAGE_KEYS.forceUnlock, String(!isForceUnlocked()));
             renderTopicGrid();
         }
 
@@ -718,7 +747,7 @@
                 const data = await res.json();
                 if (data.success && data.student) {
                     currentStudent = normalizeStudentObj(data.student);
-                    sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
+                    localStorage.setItem(STORAGE_KEYS.student, JSON.stringify(currentStudent));
                     if (data.nextTopicUnlocked) {
                         alert(`🎉 Bạn đã mở khóa hết các bài của Chủ Đề ${topicId}! Chủ Đề ${topicId + 1} đã được mở khóa!`);
                     }
@@ -752,7 +781,7 @@
                 }
                 currentStudent.unlockedByTopic[nextKey] = Math.max(currentStudent.unlockedByTopic[nextKey] || 0, currentStudent.lessonsByTopic[nextKey].length);
             }
-            sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
+            localStorage.setItem(STORAGE_KEYS.student, JSON.stringify(currentStudent));
             await syncProgressToServer(topicId, nextCount, total);
         }
 
@@ -791,9 +820,9 @@
                 }
                 clearCredentialInputs();
                 isAdminLoggedIn = false;
-                sessionStorage.removeItem('adminSessionBible');
+                localStorage.removeItem(STORAGE_KEYS.admin);
                 currentStudent = normalizeStudentObj(data.student);
-                sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
+                localStorage.setItem(STORAGE_KEYS.student, JSON.stringify(currentStudent));
                 document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
                 updateGlobalSessionBar();
                 goToScreenTopics();
@@ -802,19 +831,52 @@
             }
         }
 
+        function restoreStudentScreen(targetScreen, replace = true) {
+            const savedNav = loadSavedNavState();
+            if (savedNav) {
+                currentTopicId = Number(savedNav.currentTopicId || 1);
+                currentLessonRelativeIndex = Number(savedNav.currentLessonRelativeIndex || 0);
+                studyMode = savedNav.studyMode || 'lesson';
+                activeQuizType = Number(savedNav.activeQuizType || 3);
+                selectedLessonForQuizIndex = Number(savedNav.selectedLessonForQuizIndex || 0);
+            }
+
+            if (!isTopicUnlocked(currentTopicId)) {
+                currentTopicId = 1;
+            }
+
+            if (targetScreen === 'screenModes') {
+                goToScreenModes(replace);
+            } else if (targetScreen === 'screenQuizSelectLesson') {
+                prepareQuiz(activeQuizType === 2 ? 2 : 1);
+                updateAddressBarForScreen('screenQuizSelectLesson', replace);
+                saveNavState('screenQuizSelectLesson');
+            } else if (targetScreen === 'screenFlashcard') {
+                if (studyMode === 'mix') startModeMix();
+                else startModeLesson();
+                updateAddressBarForScreen('screenFlashcard', replace);
+                saveNavState('screenFlashcard');
+            } else if (targetScreen === 'screenQuiz') {
+                startQuizMode();
+                updateAddressBarForScreen('screenQuiz', replace);
+                saveNavState('screenQuiz');
+            } else {
+                goToScreenTopics(replace);
+            }
+        }
+
         async function loadDatabase() {
             try {
-                localStorage.removeItem('loggedInStudentObjBible');
-                localStorage.removeItem('lastActiveTimeBible');
                 clearCredentialInputs();
 
-                const response = await fetch('data.json');
+                const response = await fetch('/data.json');
                 if (!response.ok) throw new Error('Không thể tải file dữ liệu');
                 bibleData = await response.json();
                 renderAdminLessonCheckboxes();
                 document.getElementById('globalProgress').textContent = `Đã tải ${bibleData.length} bài học thành công!`;
 
                 const requestedScreenFromUrl = pathToScreenMap[window.location.pathname] || null;
+                const savedNav = loadSavedNavState();
                 if (window.location.pathname === '/register') {
                     authMode = 'register';
                     document.getElementById('tabLogin').classList.remove('active');
@@ -822,7 +884,7 @@
                     document.getElementById('btnStudentAuth').textContent = 'Đăng Ký Ngay ✨';
                 }
 
-                if (sessionStorage.getItem('adminSessionBible') === 'true') {
+                if (localStorage.getItem(STORAGE_KEYS.admin) === 'true') {
                     isAdminLoggedIn = true;
                     updateGlobalSessionBar();
                     checkTabReturnTimeout();
@@ -832,7 +894,7 @@
                     return;
                 }
 
-                const savedObj = sessionStorage.getItem('activeStudentSessionBible');
+                const savedObj = localStorage.getItem(STORAGE_KEYS.student);
                 if (savedObj) {
                     const parsed = normalizeStudentObj(JSON.parse(savedObj));
                     try {
@@ -840,7 +902,7 @@
                         const pData = await pRes.json();
                         if (pRes.ok && pData.success && pData.student) {
                             currentStudent = normalizeStudentObj(pData.student);
-                            sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
+                            localStorage.setItem(STORAGE_KEYS.student, JSON.stringify(currentStudent));
                         } else {
                             currentStudent = parsed;
                         }
@@ -853,13 +915,10 @@
                     if (!currentStudent) return;
 
                     const allowedStudentScreens = ['screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz'];
-                    if (requestedScreenFromUrl && allowedStudentScreens.includes(requestedScreenFromUrl)) {
-                        if (requestedScreenFromUrl === 'screenTopics') goToScreenTopics(true);
-                        else if (requestedScreenFromUrl === 'screenModes') goToScreenModes(true);
-                        else goToScreenTopics(true);
-                    } else {
-                        goToScreenTopics(true);
-                    }
+                    const targetScreen = (requestedScreenFromUrl && allowedStudentScreens.includes(requestedScreenFromUrl))
+                        ? requestedScreenFromUrl
+                        : (savedNav?.screenId && allowedStudentScreens.includes(savedNav.screenId) ? savedNav.screenId : 'screenTopics');
+                    restoreStudentScreen(targetScreen, true);
                 } else {
                     updateGlobalSessionBar();
                     if (requestedScreenFromUrl === 'screenAdminLogin') {
@@ -881,7 +940,7 @@
                 return;
             }
             if (currentStudent && ['screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz'].includes(targetScreen)) {
-                showScreen(targetScreen, true);
+                restoreStudentScreen(targetScreen, true);
                 return;
             }
             if (!currentStudent && !isAdminLoggedIn) {
@@ -903,7 +962,7 @@
                 if (res.ok && data.success) {
                     clearCredentialInputs();
                     isAdminLoggedIn = true;
-                    sessionStorage.setItem('adminSessionBible', 'true');
+                    localStorage.setItem(STORAGE_KEYS.admin, 'true');
                     updateGlobalSessionBar();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
@@ -1083,6 +1142,9 @@
             document.getElementById(screenId).classList.remove('hidden');
             updateGlobalSessionBar();
             updateAddressBarForScreen(screenId, replaceUrl);
+            if (currentStudent || isAdminLoggedIn) {
+                saveNavState(screenId);
+            }
         }
 
         function goToScreenTopics(replaceUrl = false) {
@@ -1148,7 +1210,9 @@
             const lessons = getLessonsOfCurrentTopic();
             if (!lessons.length) return;
             const openIndexes = getUnlockedLessonIndexes(currentTopicId);
-            const startIdx = openIndexes.length ? openIndexes[0] : 0;
+            const startIdx = openIndexes.includes(currentLessonRelativeIndex)
+                ? currentLessonRelativeIndex
+                : (openIndexes.length ? openIndexes[0] : 0);
             document.getElementById('lessonSelect').value = startIdx;
             loadLessonVerses(startIdx);
             showScreen('screenFlashcard');
@@ -1191,6 +1255,9 @@
             const idx = parseInt(document.getElementById('lessonSelect').value);
             if (isLessonUnlocked(currentTopicId, idx)) {
                 loadLessonVerses(idx);
+                if (currentStudent || isAdminLoggedIn) {
+                    saveNavState('screenFlashcard');
+                }
             }
         }
 
@@ -1304,7 +1371,9 @@
                     opt.textContent = isOpen ? lesson.title : `🔒 ${lesson.title} (Chưa mở khóa)`;
                     select.appendChild(opt);
                 });
-                select.value = openIndexes.length ? openIndexes[0] : 0;
+                select.value = openIndexes.includes(selectedLessonForQuizIndex)
+                    ? selectedLessonForQuizIndex
+                    : (openIndexes.length ? openIndexes[0] : 0);
                 showScreen('screenQuizSelectLesson');
             } else {
                 startQuizMode();
@@ -1326,6 +1395,10 @@
 
             if (activeQuizType === 1 || activeQuizType === 2) {
                 const chosenLesson = rawLessons[selectedLessonForQuizIndex];
+                if (!chosenLesson) {
+                    goToScreenModes();
+                    return;
+                }
                 document.getElementById('quizTopicName').textContent = `ĐANG KIỂM TRA: ${chosenLesson.title}`;
                 bank = chosenLesson.verses.map(v => ({ ref: v.ref, text: v.text, lesson: chosenLesson.title }));
                 if (activeQuizType === 1) poolWrongAnswers = chosenLesson.verses.map(v => v.ref);
