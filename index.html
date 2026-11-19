@@ -6,7 +6,7 @@
     <title>Ôn Tập & Kiểm Tra Trí Nhớ Kinh Thánh</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .container { max-width: 520px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
+        .container { max-width: 560px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
 
         .auth-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -17,6 +17,9 @@
         input[type="text"], input[type="password"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
         .btn-primary { background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
         .btn-primary:hover { background: #219653; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .btn-warning { background: #e67e22; color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .btn-info { background: #2980b9; color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
         .admin-link-btn { background: none; border: none; color: #2980b9; cursor: pointer; font-size: 13px; text-decoration: underline; margin-top: 5px; text-align: center; }
 
         .topic-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -32,8 +35,11 @@
         .unlock-toggle-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8f9fa; padding: 10px 15px; border-radius: 8px; border: 1px solid #e9ecef; }
         .btn-toggle-unlock { background: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .admin-section { border: 1px solid #e0e6ed; border-radius: 10px; padding: 12px; margin-top: 12px; background: #fafbfc; }
+        .admin-section h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
+        .admin-row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 7px; text-align: left; }
         .admin-table th { background-color: #f2f2f2; color: #333; }
 
         .mode-container { display: flex; flex-direction: column; gap: 10px; width: 100%; }
@@ -46,7 +52,7 @@
 
         .btn-back { background: #95a5a6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; align-self: flex-start; }
         .controls { margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; background: #fff; }
 
         .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; min-height: 285px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; }
@@ -64,6 +70,10 @@
         .btn-nav { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
         .quiz-box { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .quiz-top-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff8e7; border: 1px solid #f5b041; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; }
+        .timer-badge { background: #e67e22; color: white; padding: 4px 10px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+        .timer-badge.danger { background: #c0392b; }
+
         .quiz-question { background: #fdfefe; border: 2px solid #f39c12; padding: 15px; border-radius: 10px; text-align: center; }
         .quiz-options { display: flex; flex-direction: column; gap: 8px; }
         .quiz-option-btn { background: #fff; border: 1px solid #bdc3c7; padding: 12px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; transition: 0.2s; }
@@ -107,21 +117,67 @@
         <!-- DASHBOARD ADMIN -->
         <div id="screenAdminDashboard" class="hidden">
             <button class="btn-back" onclick="logoutAdmin()">🚪 Đăng xuất Admin</button>
-            <h3 style="color: #2c3e50; text-align: center; margin-top: 0;">📊 Bảng Quản Trị Điểm Số Học Viên</h3>
-            <div style="max-height: 350px; overflow-y: auto;">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Học viên</th>
-                            <th>Bài kiểm tra</th>
-                            <th>Điểm</th>
-                            <th>Thời gian</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminResultsTableBody"></tbody>
-                </table>
+            <h3 style="color: #2c3e50; text-align: center; margin-top: 0;">📊 Bảng Quản Trị Học Viên & Điểm Số</h3>
+
+            <!-- Quản lý học viên: khóa/mở bài & xóa tài khoản -->
+            <div class="admin-section">
+                <h4>👤 Quản Lý Tài Khoản & Mở/Khóa Bài Học Viên</h4>
+                <select id="adminStudentSelect" onchange="onSelectAdminStudent()"></select>
+                <div id="adminStudentProgressInfo" style="font-size: 12px; color: #555; margin: 8px 0;"></div>
+
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <select id="adminTargetTopicSelect">
+                        <option value="1">Chủ Đề 1</option>
+                        <option value="2">Chủ Đề 2</option>
+                        <option value="3">Chủ Đề 3</option>
+                        <option value="4">Chủ Đề 4</option>
+                        <option value="5">Chủ Đề 5</option>
+                    </select>
+                    <select id="adminTargetLessonsSelect">
+                        <option value="1">Mở 1 bài</option>
+                        <option value="2">Mở 2 bài</option>
+                        <option value="3">Mở 3 bài</option>
+                        <option value="4">Mở 4 bài</option>
+                        <option value="5">Mở 5 bài</option>
+                        <option value="6">Mở 6 bài</option>
+                        <option value="7">Mở 7 bài</option>
+                        <option value="8">Mở 8 bài</option>
+                        <option value="9">Mở 9 bài</option>
+                        <option value="10">Mở đủ 10 bài</option>
+                    </select>
+                </div>
+
+                <div class="admin-row-actions">
+                    <button class="btn-info" onclick="adminApplyCustomProgress()">✅ Áp Dụng Mở/Khóa</button>
+                    <button class="btn-warning" onclick="adminSetProgressAction('unlock_all')">🔓 Mở Toàn Bộ</button>
+                    <button class="btn-warning" onclick="adminSetProgressAction('reset_lock_all')">🔒 Reset Khóa Lại</button>
+                    <button class="btn-danger" onclick="adminDeleteStudent(false)">🗑️ Xóa Tài Khoản</button>
+                    <button class="btn-danger" onclick="adminDeleteStudent(true)">🗑️ Xóa TK + Điểm</button>
+                </div>
             </div>
-            <button class="btn-primary" style="margin-top: 15px;" onclick="loadAdminResults()">🔄 Làm Mới Dữ Liệu</button>
+
+            <!-- Quản lý kết quả kiểm tra -->
+            <div class="admin-section">
+                <h4>📝 Kết Quả Kiểm Tra</h4>
+                <div class="admin-row-actions" style="margin-top: 0; margin-bottom: 8px;">
+                    <button class="btn-primary" style="padding: 8px 12px; font-size: 13px;" onclick="refreshAdminAll()">🔄 Làm Mới Dữ Liệu</button>
+                    <button class="btn-warning" onclick="adminResetResults(true)">🧹 Reset Điểm SV Đang Chọn</button>
+                    <button class="btn-danger" onclick="adminResetResults(false)">💥 Reset Tất Cả Điểm</button>
+                </div>
+                <div style="max-height: 280px; overflow-y: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Học viên</th>
+                                <th>Bài kiểm tra</th>
+                                <th>Điểm</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminResultsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- MÀN HÌNH 1: CHỌN CHỦ ĐỀ -->
@@ -188,9 +244,12 @@
 
         <!-- TRẮC NGHIỆM -->
         <div id="screenQuiz" class="hidden">
-            <button class="btn-back" onclick="goToScreenModes()">⬅️ Thoát</button>
+            <button class="btn-back" onclick="exitQuizEarly()">⬅️ Thoát</button>
             <div class="quiz-box">
-                <div style="font-size: 13px; font-weight: bold; color: #e67e22; text-align: center;" id="quizTopicName">Chủ đề kiểm tra</div>
+                <div class="quiz-top-bar">
+                    <span id="quizTopicName" style="color: #e67e22;">Chủ đề kiểm tra</span>
+                    <span class="timer-badge" id="quizTimerBadge">⏱️ 01:00</span>
+                </div>
                 <div class="quiz-question">
                     <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 5px;">HÃY CHỌN ĐỊA CHỈ (REFERENCE) CHÍNH XÁC CHO CÂU KINH THÁNH SAU:</div>
                     <div id="quizQuestionText" style="font-size: 14px; font-weight: bold; color: #2c3e50; line-height: 1.5;">Nội dung câu...</div>
@@ -207,6 +266,8 @@
     </div>
 
     <script>
+        const QUIZ_DURATION_SECONDS = 60; // Thời gian làm bài thi (giây)
+
         let bibleData = [];
         let currentTopicId = 1;
         let currentLessonRelativeIndex = 0;
@@ -220,9 +281,13 @@
         let quizScore = 0;
         let activeQuizType = 3;
         let selectedLessonForQuizIndex = 0;
+        let quizTimerInterval = null;
+        let remainingSeconds = QUIZ_DURATION_SECONDS;
+        let quizTimedOut = false;
 
         let authMode = 'login';
         let currentStudent = null;
+        let adminStudentsCache = [];
 
         const topicsConfig = [
             { id: 1, title: "Chủ Đề 1", name: "Bài 1 đến Bài 10", start: 1, end: 10 },
@@ -362,6 +427,7 @@
         }
 
         function logoutStudent() {
+            stopQuizTimer();
             currentStudent = null;
             localStorage.removeItem('loggedInStudentObjBible');
             document.getElementById('studentPasswordInput').value = '';
@@ -377,7 +443,19 @@
 
                 const savedObj = localStorage.getItem('loggedInStudentObjBible');
                 if (savedObj) {
-                    currentStudent = normalizeStudentObj(JSON.parse(savedObj));
+                    const parsed = normalizeStudentObj(JSON.parse(savedObj));
+                    try {
+                        const pRes = await fetch(`/api/student/progress/${encodeURIComponent(parsed.username)}`);
+                        const pData = await pRes.json();
+                        if (pRes.ok && pData.success && pData.student) {
+                            currentStudent = normalizeStudentObj(pData.student);
+                            localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
+                        } else {
+                            currentStudent = parsed;
+                        }
+                    } catch {
+                        currentStudent = parsed;
+                    }
                     document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
                     goToScreenTopics();
                 } else {
@@ -399,7 +477,7 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    await loadAdminResults();
+                    await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                 } else {
                     alert(data.message || 'Đăng nhập Admin thất bại!');
@@ -414,13 +492,122 @@
             else showScreen('screenLogin');
         }
 
+        async function refreshAdminAll() {
+            await Promise.all([loadAdminStudents(), loadAdminResults()]);
+        }
+
+        async function loadAdminStudents() {
+            try {
+                const res = await fetch('/api/admin/students');
+                const users = await res.json();
+                adminStudentsCache = Array.isArray(users) ? users : [];
+                const select = document.getElementById('adminStudentSelect');
+                select.innerHTML = '';
+
+                if (!adminStudentsCache.length) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '-- Chưa có tài khoản học viên nào --';
+                    select.appendChild(opt);
+                    document.getElementById('adminStudentProgressInfo').textContent = '';
+                    return;
+                }
+
+                adminStudentsCache.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.username;
+                    opt.textContent = `${u.username} (Chủ đề mở: ${u.unlockedTopic}/5)`;
+                    select.appendChild(opt);
+                });
+
+                onSelectAdminStudent();
+            } catch (e) {
+                console.error('Lỗi tải danh sách học viên:', e);
+            }
+        }
+
+        function onSelectAdminStudent() {
+            const uname = document.getElementById('adminStudentSelect').value;
+            const user = adminStudentsCache.find(u => u.username === uname);
+            const infoEl = document.getElementById('adminStudentProgressInfo');
+            if (!user) {
+                infoEl.textContent = '';
+                return;
+            }
+            const map = user.unlockedByTopic || {};
+            infoEl.textContent = `Tiến độ mở bài: CĐ1=${map["1"]||0}/10, CĐ2=${map["2"]||0}/10, CĐ3=${map["3"]||0}/10, CĐ4=${map["4"]||0}/10, CĐ5=${map["5"]||0}/10`;
+        }
+
+        async function adminApplyCustomProgress() {
+            const username = document.getElementById('adminStudentSelect').value;
+            if (!username) return alert('Chưa chọn học viên!');
+            const targetTopic = Number(document.getElementById('adminTargetTopicSelect').value);
+            const targetLessons = Number(document.getElementById('adminTargetLessonsSelect').value);
+
+            const res = await fetch('/api/admin/set-progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, actionType: 'custom', targetTopic, targetLessons })
+            });
+            const data = await res.json();
+            alert(data.message || 'Đã cập nhật!');
+            await loadAdminStudents();
+        }
+
+        async function adminSetProgressAction(actionType) {
+            const username = document.getElementById('adminStudentSelect').value;
+            if (!username) return alert('Chưa chọn học viên!');
+            const res = await fetch('/api/admin/set-progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, actionType })
+            });
+            const data = await res.json();
+            alert(data.message || 'Đã cập nhật!');
+            await loadAdminStudents();
+        }
+
+        async function adminDeleteStudent(deleteResults) {
+            const username = document.getElementById('adminStudentSelect').value;
+            if (!username) return alert('Chưa chọn học viên!');
+            const msg = deleteResults
+                ? `Xóa vĩnh viễn tài khoản "${username}" VÀ toàn bộ điểm thi của tài khoản này?`
+                : `Xóa vĩnh viễn tài khoản "${username}"?`;
+            if (!confirm(msg)) return;
+
+            const res = await fetch('/api/admin/delete-student', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, deleteResults })
+            });
+            const data = await res.json();
+            alert(data.message || 'Đã xóa!');
+            await refreshAdminAll();
+        }
+
+        async function adminResetResults(onlySelectedStudent) {
+            const studentName = onlySelectedStudent ? document.getElementById('adminStudentSelect').value : '';
+            if (onlySelectedStudent && !studentName) return alert('Chưa chọn học viên!');
+            const confirmMsg = onlySelectedStudent
+                ? `Xóa toàn bộ kết quả kiểm tra của học viên "${studentName}"?`
+                : 'Reset (xóa) TOÀN BỘ kết quả kiểm tra của tất cả học viên?';
+            if (!confirm(confirmMsg)) return;
+
+            const res = await fetch('/api/admin/reset-results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentName })
+            });
+            const data = await res.json();
+            alert(data.message || 'Đã reset kết quả!');
+            await loadAdminResults();
+        }
+
         async function loadAdminResults() {
             try {
                 const res = await fetch('/api/admin/results');
                 const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.message || 'Lỗi tải dữ liệu từ server.');
-                }
+                if (!res.ok) throw new Error(data.message || 'Lỗi tải dữ liệu từ server.');
                 const results = Array.isArray(data) ? data : (data.results || []);
                 const tbody = document.getElementById('adminResultsTableBody');
                 tbody.innerHTML = '';
@@ -430,9 +617,10 @@
                 }
                 results.forEach(r => {
                     const tr = document.createElement('tr');
+                    const statusBadge = r.statusText ? ` <span style="color:#c0392b;font-weight:bold;">[${r.statusText}]</span>` : '';
                     tr.innerHTML = `
                         <td><b>${r.studentName}</b></td>
-                        <td>Chủ đề ${r.topicId} (KT ${r.quizType})${r.lessonTitle ? ' - ' + r.lessonTitle : ''}</td>
+                        <td>Chủ đề ${r.topicId} (KT ${r.quizType})${r.lessonTitle ? ' - ' + r.lessonTitle : ''}${statusBadge}</td>
                         <td style="color: #27ae60; font-weight: bold;">${r.score} / ${r.total}</td>
                         <td style="font-size: 11px; color: #666;">${r.date}</td>
                     `;
@@ -450,12 +638,14 @@
         }
 
         function goToScreenTopics() {
+            stopQuizTimer();
             renderTopicGrid();
             showScreen('screenTopics');
             document.getElementById('globalProgress').classList.add('hidden');
         }
 
         function goToScreenModes() {
+            stopQuizTimer();
             const topic = topicsConfig.find(t => t.id === currentTopicId);
             const lessons = getLessonsOfCurrentTopic();
             const unlockedCount = getUnlockedLessonsCount(currentTopicId);
@@ -598,6 +788,57 @@
             loadCardContent();
         }
 
+        function formatTimer(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `⏱️ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function stopQuizTimer() {
+            if (quizTimerInterval) {
+                clearInterval(quizTimerInterval);
+                quizTimerInterval = null;
+            }
+        }
+
+        function startQuizTimer() {
+            stopQuizTimer();
+            quizTimedOut = false;
+            remainingSeconds = QUIZ_DURATION_SECONDS;
+            const badge = document.getElementById('quizTimerBadge');
+            badge.classList.remove('danger');
+            badge.textContent = formatTimer(remainingSeconds);
+
+            quizTimerInterval = setInterval(async () => {
+                remainingSeconds--;
+                badge.textContent = formatTimer(Math.max(0, remainingSeconds));
+                if (remainingSeconds <= 10) {
+                    badge.classList.add('danger');
+                }
+                if (remainingSeconds <= 0) {
+                    stopQuizTimer();
+                    quizTimedOut = true;
+                    document.querySelectorAll('.quiz-option-btn').forEach(b => b.disabled = true);
+                    document.getElementById('btnNextQuiz').classList.add('hidden');
+
+                    const totalMax = quizList.length * 10;
+                    const chosenLessonTitle = (activeQuizType === 1 || activeQuizType === 2)
+                        ? getLessonsOfCurrentTopic()[selectedLessonForQuizIndex]?.title || ''
+                        : '';
+
+                    alert(`⏰ ĐÃ HẾT THỜI GIAN LÀM BÀI!\nBài thi bị khóa và đánh RỚT (0 / ${totalMax} điểm).`);
+
+                    await submitQuizResultToServer(0, totalMax, chosenLessonTitle, 'Hết giờ - Rớt');
+                    goToScreenModes();
+                }
+            }, 1000);
+        }
+
+        function exitQuizEarly() {
+            stopQuizTimer();
+            goToScreenModes();
+        }
+
         function prepareQuiz(type) {
             activeQuizType = type;
             if (type === 1 || type === 2) {
@@ -659,10 +900,12 @@
             currentQuizIndex = 0;
             quizScore = 0;
             showScreen('screenQuiz');
+            startQuizTimer();
             loadQuizQuestion(poolWrongAnswers);
         }
 
         function loadQuizQuestion(poolWrongAnswers) {
+            if (quizTimedOut) return;
             document.getElementById('btnNextQuiz').classList.add('hidden');
             const currentQ = quizList[currentQuizIndex];
             document.getElementById('quizQuestionText').textContent = `"${currentQ.text}"`;
@@ -693,6 +936,7 @@
         }
 
         function checkQuizAnswer(selectedBtn, selectedChoice, correctRef) {
+            if (quizTimedOut) return;
             document.querySelectorAll('.quiz-option-btn').forEach(b => b.disabled = true);
             if (selectedChoice === correctRef) {
                 selectedBtn.classList.add('correct');
@@ -706,7 +950,32 @@
             document.getElementById('btnNextQuiz').classList.remove('hidden');
         }
 
+        async function submitQuizResultToServer(finalScore, totalMax, chosenLessonTitle, statusText) {
+            try {
+                const res = await fetch('/api/submit-quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentName: currentStudent?.username || 'Khách',
+                        topicId: currentTopicId,
+                        quizType: activeQuizType,
+                        lessonTitle: chosenLessonTitle,
+                        score: finalScore,
+                        total: totalMax,
+                        statusText
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    alert("Lưu điểm về Admin thất bại: " + (data.message || "Lỗi máy chủ"));
+                }
+            } catch (e) {
+                alert("Không thể gửi kết quả về server quản trị: " + e.message);
+            }
+        }
+
         async function nextQuizQuestion() {
+            if (quizTimedOut) return;
             currentQuizIndex++;
             if (currentQuizIndex < quizList.length) {
                 const rawLessons = getLessonsOfCurrentTopic();
@@ -718,34 +987,16 @@
                 }
                 loadQuizQuestion(poolWrongAnswers);
             } else {
+                stopQuizTimer();
                 const totalMax = quizList.length * 10;
                 const passed = quizScore >= totalMax / 2;
                 const chosenLessonTitle = (activeQuizType === 1 || activeQuizType === 2)
                     ? getLessonsOfCurrentTopic()[selectedLessonForQuizIndex]?.title || ''
                     : '';
 
-                alert(`🎉 Bạn đã hoàn thành bài kiểm tra!\nĐiểm số: ${quizScore} / ${totalMax}`);
+                alert(`🎉 Bạn đã hoàn thành bài kiểm tra!\nĐiểm số: ${quizScore} / ${totalMax} (${passed ? 'ĐẠT' : 'CHƯA ĐẠT'})`);
 
-                try {
-                    const res = await fetch('/api/submit-quiz', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            studentName: currentStudent?.username || 'Khách',
-                            topicId: currentTopicId,
-                            quizType: activeQuizType,
-                            lessonTitle: chosenLessonTitle,
-                            score: quizScore,
-                            total: totalMax
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok || !data.success) {
-                        alert("Lưu điểm về Admin thất bại: " + (data.message || "Lỗi máy chủ"));
-                    }
-                } catch (e) {
-                    alert("Không thể gửi kết quả về server quản trị: " + e.message);
-                }
+                await submitQuizResultToServer(quizScore, totalMax, chosenLessonTitle, passed ? 'Đạt' : 'Chưa đạt');
 
                 if (passed && (activeQuizType === 1 || activeQuizType === 2)) {
                     await unlockNextLessonInTopic(currentTopicId, selectedLessonForQuizIndex);
