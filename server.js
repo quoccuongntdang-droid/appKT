@@ -18,6 +18,36 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(String(password)).digest('hex');
 }
 
+// Quản lý token phiên Admin trên bộ nhớ máy chủ
+const ADMIN_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const adminSessions = new Map(); // token -> expiresAt
+
+function issueAdminToken() {
+    const token = crypto.randomBytes(32).toString('hex');
+    adminSessions.set(token, Date.now() + ADMIN_TOKEN_TTL_MS);
+    return token;
+}
+
+function isValidAdminToken(token) {
+    if (!token) return false;
+    const expiresAt = adminSessions.get(token);
+    if (!expiresAt) return false;
+    if (Date.now() > expiresAt) {
+        adminSessions.delete(token);
+        return false;
+    }
+    return true;
+}
+
+function requireAdmin(req, res, next) {
+    const authHeader = String(req.headers?.authorization || '');
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    if (!isValidAdminToken(token)) {
+        return res.status(401).json({ success: false, code: 'UNAUTHORIZED', message: 'Phiên Admin không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại!' });
+    }
+    return next();
+}
+
 // lessonsByTopic: { "1": [0, 1], "2": [], ... } -> mảng chỉ số 0-based các bài đang được mở khóa trong từng chủ đề
 const studentUserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true, lowercase: true },
@@ -96,7 +126,6 @@ function normalizeProgress(userDoc) {
     return { unlockedTopic, unlockedByTopic: progress, lessonsByTopic };
 }
 
-// Hỗ trợ mọi đường dẫn SPA để thanh địa chỉ điều hướng trực tiếp hoạt động khi reload
 const spaRoutes = [
     '/',
     '/login',
@@ -192,7 +221,6 @@ app.get('/api/student/progress/:username', async (req, res) => {
     }
 });
 
-// Học viên mở khóa tuần tự bài tiếp theo / chủ đề tiếp theo
 app.post('/api/student/progress', async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
@@ -253,8 +281,154 @@ app.post('/api/student/progress', async (req, res) => {
     }
 });
 
-// Admin lưu danh sách các bài được tick mở/khóa trong từng chủ đề cho học viên
-app.post('/api/admin/set-checked-lessons', async (req, res) => {
+// Admin đăng nhập & cấp token phiên
+app.post('/api/admin/login', (req, res) => {
+    const { username, password } = req.body || {};
+    const ADMIN_USER = process.env.ADMIN_USER || "admin";
+    const ADMIN_PASS = process.env.ADMIN_PASS || "cuong123";
+
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+        const token = issueAdminToken();
+        return res.json({
+            success: true,
+            token,
+            expiresInMs: ADMIN_TOKEN_TTL_MS,
+            message: 'Đăng nhập Admin thành công!'
+        });
+    }
+    return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị!' });
+});
+
+// Kiểm tra token Admin còn hợp lệ không
+app.get('/api/admin/verify', requireAdmin, (req, res) => {
+    return res.json({ success: true, valid: true });
+});
+
+// Admin đăng xuất & thu hồi token
+app.post('/api/admin/logout', (req, res) => {
+    const authHeader = String(req.headers?.authorization || '');
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    if (token) adminSessions.delete(token);
+    return res.json({ success: true, message: 'Đã đăng xuất Admin!' });
+});
+
+app.post('/api/submit-quiz', async (req, res) => {
+    try {
+        const studentName = String(req.body?.studentName || '').trim();
+        const topicId = Number(req.body?.topicId);
+        const quizType = Number(req.body?.quizType);
+        const lessonTitle = String(req.body?.lessonTitle || '').trim();
+        const score = Number(req.body?.score);
+        const total = Number(req.body?.total);
+        const statusText = String(req.body?.statusText || '').trim();
+        const date = req.body?.date;
+
+        if (!studentName || !Number.isFinite(topicId) || !Number.isFinite(quizType) || !Number.isFinite(score) || !Number.isFinite(total)) {
+            return res.status(400).json({ success: false, message: 'Thiếu hoặc sai định dạng dữ liệu bài kiểm tra!' });
+        }
+
+        const record = new BibleQuizResult({
+            studentName,
+            topicId,
+            quizType,
+            lessonTitle,
+            score,
+            total,
+            statusText,
+            ...(date ? { date } : {})
+        });
+
+        await record.save();
+        console.log(`📝 Đã lưu điểm của ${studentName} (Chủ đề ${topicId}, KT ${quizType}): ${score}/${total} ${statusText}`);
+        return res.json({ success: true, message: 'Đã lưu kết quả vào MongoDB thành công!' });
+    } catch (err) {
+        console.error('Lỗi lưu kết quả MongoDB:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi lưu kết quả lên cơ sở dữ liệu!' });
+    }
+});
+
+// Các route Admin dưới đây đều yêu cầu token hợp lệ qua requireAdmin
+app.get('/api/admin/results', requireAdmin, async (req, res) => {
+    try {
+        const results = await BibleQuizResult.find().sort({ createdAt: -1 }).limit(200);
+        return res.json(results);
+    } catch (err) {
+        console.error('Lỗi đọc kết quả MongoDB:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi lấy dữ liệu từ MongoDB!' });
+    }
+});
+
+app.post('/api/admin/delete-result', requireAdmin, async (req, res) => {
+    try {
+        const id = String(req.body?.id || '').trim();
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'Thiếu ID bản ghi điểm!' });
+        }
+        const deleted = await BibleQuizResult.findByIdAndDelete(id);
+        if (!deleted) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi điểm này!' });
+        }
+        return res.json({ success: true, message: 'Đã xóa dòng kết quả!' });
+    } catch (err) {
+        console.error('Lỗi xóa dòng điểm:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi khi xóa dòng kết quả!' });
+    }
+});
+
+app.post('/api/admin/delete-results-bulk', requireAdmin, async (req, res) => {
+    try {
+        const ids = Array.isArray(req.body?.ids)
+            ? req.body.ids.map(x => String(x || '').trim()).filter(Boolean)
+            : [];
+        if (!ids.length) {
+            return res.status(400).json({ success: false, message: 'Chưa chọn dòng kết quả nào để xóa!' });
+        }
+        const deleted = await BibleQuizResult.deleteMany({ _id: { $in: ids } });
+        return res.json({
+            success: true,
+            deletedCount: deleted.deletedCount,
+            message: `Đã xóa ${deleted.deletedCount} kết quả kiểm tra đã chọn.`
+        });
+    } catch (err) {
+        console.error('Lỗi xóa nhiều dòng điểm:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi khi xóa các dòng kết quả!' });
+    }
+});
+
+app.post('/api/admin/reset-results', requireAdmin, async (req, res) => {
+    try {
+        const studentName = String(req.body?.studentName || '').trim().toLowerCase();
+        const filter = studentName ? { studentName } : {};
+        const deleted = await BibleQuizResult.deleteMany(filter);
+        return res.json({
+            success: true,
+            deletedCount: deleted.deletedCount,
+            message: studentName
+                ? `Đã xóa ${deleted.deletedCount} kết quả của học viên "${studentName}".`
+                : `Đã reset toàn bộ ${deleted.deletedCount} kết quả kiểm tra.`
+        });
+    } catch (err) {
+        console.error('Lỗi reset kết quả:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi khi reset kết quả kiểm tra!' });
+    }
+});
+
+app.get('/api/admin/students', requireAdmin, async (req, res) => {
+    try {
+        const users = await StudentUser.find().sort({ createdAt: -1 });
+        const list = users.map(u => ({
+            username: u.username,
+            ...normalizeProgress(u),
+            createdAt: u.createdAt
+        }));
+        return res.json(list);
+    } catch (err) {
+        console.error('Lỗi lấy danh sách học viên:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi tải danh sách học viên!' });
+    }
+});
+
+app.post('/api/admin/set-checked-lessons', requireAdmin, async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
         const topicId = Number(req.body?.topicId);
@@ -302,134 +476,7 @@ app.post('/api/admin/set-checked-lessons', async (req, res) => {
     }
 });
 
-app.post('/api/admin/login', (req, res) => {
-    const { username, password } = req.body || {};
-    const ADMIN_USER = process.env.ADMIN_USER || "admin";
-    const ADMIN_PASS = process.env.ADMIN_PASS || "cuong123";
-
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-        return res.json({ success: true, message: 'Đăng nhập Admin thành công!' });
-    }
-    return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị!' });
-});
-
-app.post('/api/submit-quiz', async (req, res) => {
-    try {
-        const studentName = String(req.body?.studentName || '').trim();
-        const topicId = Number(req.body?.topicId);
-        const quizType = Number(req.body?.quizType);
-        const lessonTitle = String(req.body?.lessonTitle || '').trim();
-        const score = Number(req.body?.score);
-        const total = Number(req.body?.total);
-        const statusText = String(req.body?.statusText || '').trim();
-        const date = req.body?.date;
-
-        if (!studentName || !Number.isFinite(topicId) || !Number.isFinite(quizType) || !Number.isFinite(score) || !Number.isFinite(total)) {
-            return res.status(400).json({ success: false, message: 'Thiếu hoặc sai định dạng dữ liệu bài kiểm tra!' });
-        }
-
-        const record = new BibleQuizResult({
-            studentName,
-            topicId,
-            quizType,
-            lessonTitle,
-            score,
-            total,
-            statusText,
-            ...(date ? { date } : {})
-        });
-
-        await record.save();
-        console.log(`📝 Đã lưu điểm của ${studentName} (Chủ đề ${topicId}, KT ${quizType}): ${score}/${total} ${statusText}`);
-        return res.json({ success: true, message: 'Đã lưu kết quả vào MongoDB thành công!' });
-    } catch (err) {
-        console.error('Lỗi lưu kết quả MongoDB:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi lưu kết quả lên cơ sở dữ liệu!' });
-    }
-});
-
-app.get('/api/admin/results', async (req, res) => {
-    try {
-        const results = await BibleQuizResult.find().sort({ createdAt: -1 }).limit(200);
-        return res.json(results);
-    } catch (err) {
-        console.error('Lỗi đọc kết quả MongoDB:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi lấy dữ liệu từ MongoDB!' });
-    }
-});
-
-app.post('/api/admin/delete-result', async (req, res) => {
-    try {
-        const id = String(req.body?.id || '').trim();
-        if (!id) {
-            return res.status(400).json({ success: false, message: 'Thiếu ID bản ghi điểm!' });
-        }
-        const deleted = await BibleQuizResult.findByIdAndDelete(id);
-        if (!deleted) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi điểm này!' });
-        }
-        return res.json({ success: true, message: 'Đã xóa dòng kết quả!' });
-    } catch (err) {
-        console.error('Lỗi xóa dòng điểm:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi khi xóa dòng kết quả!' });
-    }
-});
-
-// Admin xóa nhiều dòng kết quả kiểm tra theo danh sách ID
-app.post('/api/admin/delete-results-bulk', async (req, res) => {
-    try {
-        const ids = Array.isArray(req.body?.ids)
-            ? req.body.ids.map(x => String(x || '').trim()).filter(Boolean)
-            : [];
-        if (!ids.length) {
-            return res.status(400).json({ success: false, message: 'Chưa chọn dòng kết quả nào để xóa!' });
-        }
-        const deleted = await BibleQuizResult.deleteMany({ _id: { $in: ids } });
-        return res.json({
-            success: true,
-            deletedCount: deleted.deletedCount,
-            message: `Đã xóa ${deleted.deletedCount} kết quả kiểm tra đã chọn.`
-        });
-    } catch (err) {
-        console.error('Lỗi xóa nhiều dòng điểm:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi khi xóa các dòng kết quả!' });
-    }
-});
-
-app.post('/api/admin/reset-results', async (req, res) => {
-    try {
-        const studentName = String(req.body?.studentName || '').trim().toLowerCase();
-        const filter = studentName ? { studentName } : {};
-        const deleted = await BibleQuizResult.deleteMany(filter);
-        return res.json({
-            success: true,
-            deletedCount: deleted.deletedCount,
-            message: studentName
-                ? `Đã xóa ${deleted.deletedCount} kết quả của học viên "${studentName}".`
-                : `Đã reset toàn bộ ${deleted.deletedCount} kết quả kiểm tra.`
-        });
-    } catch (err) {
-        console.error('Lỗi reset kết quả:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi khi reset kết quả kiểm tra!' });
-    }
-});
-
-app.get('/api/admin/students', async (req, res) => {
-    try {
-        const users = await StudentUser.find().sort({ createdAt: -1 });
-        const list = users.map(u => ({
-            username: u.username,
-            ...normalizeProgress(u),
-            createdAt: u.createdAt
-        }));
-        return res.json(list);
-    } catch (err) {
-        console.error('Lỗi lấy danh sách học viên:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi tải danh sách học viên!' });
-    }
-});
-
-app.post('/api/admin/set-progress', async (req, res) => {
+app.post('/api/admin/set-progress', requireAdmin, async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
         const actionType = String(req.body?.actionType || 'custom');
@@ -491,7 +538,7 @@ app.post('/api/admin/set-progress', async (req, res) => {
     }
 });
 
-app.post('/api/admin/delete-student', async (req, res) => {
+app.post('/api/admin/delete-student', requireAdmin, async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
         const deleteResults = Boolean(req.body?.deleteResults);
