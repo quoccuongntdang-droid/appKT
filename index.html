@@ -33,7 +33,7 @@
         }
 
         .container.admin-wide {
-            max-width: 880px;
+            max-width: 900px;
         }
 
         h2 {
@@ -158,7 +158,10 @@
         .admin-section h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
         .admin-table-layout { display: flex; gap: 12px; align-items: flex-start; width: 100%; }
         .admin-table-wrap { flex: 1 1 auto; min-width: 0; max-height: 340px; overflow: auto; background: #fff; border-radius: 8px; }
-        .admin-side-panel { flex: 0 0 245px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 10px; border-radius: 8px; }
+        .admin-side-panel { flex: 0 0 270px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 10px; border-radius: 8px; }
+        .lesson-checklist { max-height: 210px; overflow-y: auto; border: 1px solid #e5e8eb; border-radius: 8px; padding: 8px; background: #fafbfc; display: flex; flex-direction: column; gap: 6px; }
+        .lesson-check-item { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.35; cursor: pointer; color: #2c3e50; }
+        .lesson-check-item input { margin-top: 2px; cursor: pointer; flex-shrink: 0; }
         .row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
         .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 7px; text-align: left; vertical-align: middle; }
@@ -286,16 +289,20 @@
                         </table>
                     </div>
                     <div class="admin-side-panel">
-                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Chọn chủ đề & bài để Mở / Khóa</div>
-                        <select id="adminTargetTopicSelect" onchange="populateAdminLessonSelect()">
+                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Tick chọn bài để Mở / Khóa</div>
+                        <select id="adminTargetTopicSelect" onchange="renderAdminLessonCheckboxes()">
                             <option value="1">Chủ Đề 1 (Bài 1–10)</option>
                             <option value="2">Chủ Đề 2 (Bài 11–20)</option>
                             <option value="3">Chủ Đề 3 (Bài 21–30)</option>
                             <option value="4">Chủ Đề 4 (Bài 31–40)</option>
                             <option value="5">Chủ Đề 5 (Bài 41–50)</option>
                         </select>
-                        <select id="adminTargetLessonSelect"></select>
-                        <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="refreshAdminAll()">🔄 Làm mới</button>
+                        <div class="lesson-checklist" id="adminLessonChecklist"></div>
+                        <div class="row-actions">
+                            <button type="button" class="btn-info" style="flex:1;" onclick="toggleAllAdminCheckboxes(true)">Tick hết</button>
+                            <button type="button" class="btn-warning" style="flex:1;" onclick="toggleAllAdminCheckboxes(false)">Bỏ tick</button>
+                        </div>
+                        <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="refreshAdminAll()">🔄 Làm mới danh sách</button>
                     </div>
                 </div>
             </div>
@@ -435,6 +442,32 @@
         let currentStudent = null;
         let isAdminLoggedIn = false;
         let awaySinceTimestamp = null;
+        let adminStudentsCache = [];
+        let currentScreenId = 'screenLogin';
+
+        const screenToPathMap = {
+            screenLogin: '/login',
+            screenAdminLogin: '/admin/login',
+            screenAdminDashboard: '/admin/dashboard',
+            screenTopics: '/topics',
+            screenModes: '/modes',
+            screenQuizSelectLesson: '/quiz/select-lesson',
+            screenFlashcard: '/flashcard',
+            screenQuiz: '/quiz'
+        };
+
+        const pathToScreenMap = {
+            '/': 'screenLogin',
+            '/login': 'screenLogin',
+            '/register': 'screenLogin',
+            '/admin/login': 'screenAdminLogin',
+            '/admin/dashboard': 'screenAdminDashboard',
+            '/topics': 'screenTopics',
+            '/modes': 'screenModes',
+            '/quiz/select-lesson': 'screenQuizSelectLesson',
+            '/flashcard': 'screenFlashcard',
+            '/quiz': 'screenQuiz'
+        };
 
         const topicsConfig = [
             { id: 1, title: "Chủ Đề 1", name: "Bài 1 đến Bài 10", start: 1, end: 10 },
@@ -444,19 +477,51 @@
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
 
-        function populateAdminLessonSelect() {
+        function updateAddressBarForScreen(screenId, replace = false) {
+            const targetPath = screenToPathMap[screenId] || '/';
+            if (window.location.pathname !== targetPath) {
+                if (replace) {
+                    window.history.replaceState({ screenId }, '', targetPath);
+                } else {
+                    window.history.pushState({ screenId }, '', targetPath);
+                }
+            }
+        }
+
+        function renderAdminLessonCheckboxes(preselectedIndexes = null) {
             const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
-            const lessonSelect = document.getElementById('adminTargetLessonSelect');
-            lessonSelect.innerHTML = '';
+            const container = document.getElementById('adminLessonChecklist');
+            container.innerHTML = '';
             const lessons = getLessonsOfTopic(topicId);
             const count = lessons.length || 10;
+            const selectedSet = new Set(Array.isArray(preselectedIndexes) ? preselectedIndexes : []);
 
             for (let i = 0; i < count; i++) {
-                const opt = document.createElement('option');
-                opt.value = i + 1; // số thứ tự bài trong chủ đề (1..10)
-                opt.textContent = lessons[i]?.title ? `${i + 1}. ${lessons[i].title}` : `Bài ${i + 1}`;
-                lessonSelect.appendChild(opt);
+                const label = document.createElement('label');
+                label.className = 'lesson-check-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'admin-lesson-cb';
+                cb.value = String(i);
+                cb.checked = selectedSet.has(i);
+                const span = document.createElement('span');
+                span.textContent = lessons[i]?.title ? `${i + 1}. ${lessons[i].title}` : `Bài ${i + 1}`;
+                label.appendChild(cb);
+                label.appendChild(span);
+                container.appendChild(label);
             }
+        }
+
+        function toggleAllAdminCheckboxes(checked) {
+            document.querySelectorAll('.admin-lesson-cb').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function getCheckedAdminLessonIndexes() {
+            return Array.from(document.querySelectorAll('.admin-lesson-cb'))
+                .filter(cb => cb.checked)
+                .map(cb => Number(cb.value));
         }
 
         function clearCredentialInputs() {
@@ -481,6 +546,7 @@
             awaySinceTimestamp = null;
             clearAllAuthStorage();
             clearCredentialInputs();
+            updateAddressBarForScreen('screenLogin', true);
             if (reasonMessage) alert(reasonMessage);
             location.reload();
         }
@@ -534,16 +600,33 @@
         function normalizeStudentObj(student) {
             if (!student) return null;
             const rawMap = student.unlockedByTopic || {};
+            const rawLessonsMap = student.lessonsByTopic || {};
+            const lessonsByTopic = {};
+
+            for (let t = 1; t <= 5; t++) {
+                const key = String(t);
+                if (Array.isArray(rawLessonsMap[key])) {
+                    lessonsByTopic[key] = [...new Set(rawLessonsMap[key].map(Number).filter(n => Number.isInteger(n) && n >= 0 && n < 10))].sort((a, b) => a - b);
+                } else {
+                    const count = Math.min(10, Math.max(0, Number(rawMap[key] ?? (t === 1 ? 1 : 0))));
+                    lessonsByTopic[key] = Array.from({ length: count }, (_, idx) => idx);
+                }
+            }
+            if (!lessonsByTopic["1"].length) {
+                lessonsByTopic["1"] = [0];
+            }
+
             return {
                 username: student.username,
                 unlockedTopic: Number(student.unlockedTopic || 1),
                 unlockedByTopic: {
-                    "1": Number(rawMap["1"] ?? 1),
-                    "2": Number(rawMap["2"] ?? 0),
-                    "3": Number(rawMap["3"] ?? 0),
-                    "4": Number(rawMap["4"] ?? 0),
-                    "5": Number(rawMap["5"] ?? 0)
-                }
+                    "1": Math.max(Number(rawMap["1"] ?? 1), lessonsByTopic["1"].length),
+                    "2": Math.max(Number(rawMap["2"] ?? 0), lessonsByTopic["2"].length),
+                    "3": Math.max(Number(rawMap["3"] ?? 0), lessonsByTopic["3"].length),
+                    "4": Math.max(Number(rawMap["4"] ?? 0), lessonsByTopic["4"].length),
+                    "5": Math.max(Number(rawMap["5"] ?? 0), lessonsByTopic["5"].length)
+                },
+                lessonsByTopic
             };
         }
 
@@ -561,9 +644,30 @@
             return Number(currentStudent?.unlockedTopic || 1);
         }
 
+        function getUnlockedLessonIndexes(topicId) {
+            const totalInTopic = getLessonsOfTopic(topicId).length || 10;
+            if (isForceUnlocked()) {
+                return Array.from({ length: totalInTopic }, (_, idx) => idx);
+            }
+            const arr = currentStudent?.lessonsByTopic?.[String(topicId)];
+            if (Array.isArray(arr)) {
+                return arr.filter(i => i >= 0 && i < totalInTopic).sort((a, b) => a - b);
+            }
+            const count = getUnlockedLessonsCount(topicId);
+            return Array.from({ length: count }, (_, idx) => idx);
+        }
+
+        function isLessonUnlocked(topicId, relativeIndex) {
+            return getUnlockedLessonIndexes(topicId).includes(relativeIndex);
+        }
+
         function getUnlockedLessonsCount(topicId) {
             const totalInTopic = getLessonsOfTopic(topicId).length || 10;
             if (isForceUnlocked()) return totalInTopic;
+            const arr = currentStudent?.lessonsByTopic?.[String(topicId)];
+            if (Array.isArray(arr)) {
+                return Math.min(totalInTopic, arr.length);
+            }
             const mapObj = currentStudent?.unlockedByTopic || {};
             const val = Number(mapObj[String(topicId)] ?? (topicId === 1 ? 1 : 0));
             return Math.min(totalInTopic, Math.max(0, val));
@@ -608,20 +712,27 @@
             currentStudent = normalizeStudentObj(currentStudent);
             const lessons = getLessonsOfTopic(topicId);
             const total = lessons.length || 10;
-            const currentUnlocked = getUnlockedLessonsCount(topicId);
-            const nextCount = Math.min(total, Math.max(currentUnlocked, completedRelativeIndex + 2));
-
-            if (nextCount > currentUnlocked) {
-                currentStudent.unlockedByTopic[String(topicId)] = nextCount;
-                if (nextCount >= total && topicId < 5) {
-                    currentStudent.unlockedTopic = Math.max(currentStudent.unlockedTopic || 1, topicId + 1);
-                    if (!currentStudent.unlockedByTopic[String(topicId + 1)]) {
-                        currentStudent.unlockedByTopic[String(topicId + 1)] = 1;
-                    }
-                }
-                sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
-                await syncProgressToServer(topicId, nextCount, total);
+            const key = String(topicId);
+            const setIdx = new Set(currentStudent.lessonsByTopic[key] || []);
+            setIdx.add(completedRelativeIndex);
+            if (completedRelativeIndex + 1 < total) {
+                setIdx.add(completedRelativeIndex + 1);
             }
+            const sortedArr = [...setIdx].sort((a, b) => a - b);
+            currentStudent.lessonsByTopic[key] = sortedArr;
+            const nextCount = Math.min(total, Math.max(getUnlockedLessonsCount(topicId), sortedArr.length));
+            currentStudent.unlockedByTopic[key] = nextCount;
+
+            if (nextCount >= total && topicId < 5) {
+                currentStudent.unlockedTopic = Math.max(currentStudent.unlockedTopic || 1, topicId + 1);
+                const nextKey = String(topicId + 1);
+                if (!currentStudent.lessonsByTopic[nextKey]?.length) {
+                    currentStudent.lessonsByTopic[nextKey] = [0];
+                }
+                currentStudent.unlockedByTopic[nextKey] = Math.max(currentStudent.unlockedByTopic[nextKey] || 0, currentStudent.lessonsByTopic[nextKey].length);
+            }
+            sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
+            await syncProgressToServer(topicId, nextCount, total);
         }
 
         function switchAuthTab(mode) {
@@ -630,6 +741,12 @@
             document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
             document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
             document.getElementById('btnStudentAuth').textContent = mode === 'login' ? 'Đăng Nhập 🚀' : 'Đăng Ký Ngay ✨';
+            updateAddressBarForScreen(mode === 'register' ? 'screenLogin' : 'screenLogin', false);
+            if (mode === 'register') {
+                window.history.pushState({ screenId: 'screenLogin', authMode: 'register' }, '', '/register');
+            } else {
+                window.history.pushState({ screenId: 'screenLogin', authMode: 'login' }, '', '/login');
+            }
         }
 
         async function submitStudentAuth() {
@@ -674,8 +791,13 @@
                 const response = await fetch('data.json');
                 if (!response.ok) throw new Error('Không thể tải file dữ liệu');
                 bibleData = await response.json();
-                populateAdminLessonSelect();
+                renderAdminLessonCheckboxes();
                 document.getElementById('globalProgress').textContent = `Đã tải ${bibleData.length} bài học thành công!`;
+
+                const requestedScreenFromUrl = pathToScreenMap[window.location.pathname] || null;
+                if (window.location.pathname === '/register') {
+                    switchAuthTab('register');
+                }
 
                 if (sessionStorage.getItem('adminSessionBible') === 'true') {
                     isAdminLoggedIn = true;
@@ -683,7 +805,7 @@
                     checkTabReturnTimeout();
                     if (!isAdminLoggedIn) return;
                     await refreshAdminAll();
-                    showScreen('screenAdminDashboard');
+                    showScreen('screenAdminDashboard', true);
                     return;
                 }
 
@@ -706,15 +828,44 @@
                     updateGlobalSessionBar();
                     checkTabReturnTimeout();
                     if (!currentStudent) return;
-                    goToScreenTopics();
+
+                    const allowedStudentScreens = ['screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz'];
+                    if (requestedScreenFromUrl && allowedStudentScreens.includes(requestedScreenFromUrl)) {
+                        if (requestedScreenFromUrl === 'screenTopics') goToScreenTopics(true);
+                        else if (requestedScreenFromUrl === 'screenModes') goToScreenModes(true);
+                        else goToScreenTopics(true);
+                    } else {
+                        goToScreenTopics(true);
+                    }
                 } else {
                     updateGlobalSessionBar();
-                    showScreen('screenLogin');
+                    if (requestedScreenFromUrl === 'screenAdminLogin') {
+                        showScreen('screenAdminLogin', true);
+                    } else {
+                        showScreen('screenLogin', true);
+                    }
                 }
             } catch (error) {
                 document.getElementById('globalProgress').textContent = "Lỗi tải dữ liệu data.json!";
             }
         }
+
+        window.addEventListener('popstate', async () => {
+            const targetScreen = pathToScreenMap[window.location.pathname] || 'screenLogin';
+            if (isAdminLoggedIn && targetScreen === 'screenAdminDashboard') {
+                await refreshAdminAll();
+                showScreen('screenAdminDashboard', true);
+                return;
+            }
+            if (currentStudent && ['screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz'].includes(targetScreen)) {
+                showScreen(targetScreen, true);
+                return;
+            }
+            if (!currentStudent && !isAdminLoggedIn) {
+                if (targetScreen === 'screenAdminLogin') showScreen('screenAdminLogin', true);
+                else showScreen('screenLogin', true);
+            }
+        });
 
         async function loginAsAdmin() {
             const user = document.getElementById('adminUser').value.trim();
@@ -731,7 +882,7 @@
                     isAdminLoggedIn = true;
                     sessionStorage.setItem('adminSessionBible', 'true');
                     updateGlobalSessionBar();
-                    populateAdminLessonSelect();
+                    renderAdminLessonCheckboxes();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                 } else {
@@ -750,16 +901,16 @@
             try {
                 const res = await fetch('/api/admin/students');
                 const users = await res.json();
-                const list = Array.isArray(users) ? users : [];
+                adminStudentsCache = Array.isArray(users) ? users : [];
                 const tbody = document.getElementById('adminStudentsTableBody');
                 tbody.innerHTML = '';
 
-                if (!list.length) {
+                if (!adminStudentsCache.length) {
                     tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Chưa có tài khoản học viên nào.</td></tr>`;
                     return;
                 }
 
-                list.forEach(u => {
+                adminStudentsCache.forEach(u => {
                     const map = u.unlockedByTopic || {};
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -770,8 +921,9 @@
                         </td>
                         <td>
                             <div class="row-actions">
-                                <button type="button" class="btn-info" onclick="adminRowUnlockToLesson('${u.username}')">Mở tới bài</button>
-                                <button type="button" class="btn-warning" onclick="adminRowLockFromLesson('${u.username}')">Khóa từ bài</button>
+                                <button type="button" class="btn-info" onclick="adminLoadStudentTopicChecks('${u.username}')">Nạp tick</button>
+                                <button type="button" class="btn-primary" style="width:auto;padding:7px 10px;font-size:12px;" onclick="adminSaveCheckedLessons('${u.username}')">Lưu bài tick</button>
+                                <button type="button" class="btn-warning" onclick="adminRowResetLock('${u.username}')">Khóa lại</button>
                                 <button type="button" class="btn-danger" onclick="adminRowDeleteStudent('${u.username}')">Xóa TK</button>
                             </div>
                         </td>
@@ -783,45 +935,38 @@
             }
         }
 
-        // Mở khóa từ đầu chủ đề tới bài đang chọn trong select
-        async function adminRowUnlockToLesson(username) {
-            const targetTopic = Number(document.getElementById('adminTargetTopicSelect').value);
-            const selectedLessonOrder = Number(document.getElementById('adminTargetLessonSelect').value);
-            const res = await fetch('/api/admin/set-progress', {
+        // Nạp trạng thái bài đang mở của học viên + chủ đề đã chọn vào các ô checkbox
+        function adminLoadStudentTopicChecks(username) {
+            const user = adminStudentsCache.find(u => u.username === username);
+            const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
+            const checkedArr = user?.lessonsByTopic?.[String(topicId)] || [];
+            renderAdminLessonCheckboxes(checkedArr);
+            alert(`Đã nạp ${checkedArr.length} bài đang mở của "${username}" ở Chủ Đề ${topicId}. Hãy tick/bỏ tick rồi bấm "Lưu bài tick".`);
+        }
+
+        // Lưu danh sách các bài đang tick mở/khóa cho học viên
+        async function adminSaveCheckedLessons(username) {
+            const topicId = Number(document.getElementById('adminTargetTopicSelect').value || 1);
+            const checkedIndexes = getCheckedAdminLessonIndexes();
+            const res = await fetch('/api/admin/set-checked-lessons', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    actionType: 'custom',
-                    targetTopic,
-                    targetLessons: selectedLessonOrder
-                })
+                body: JSON.stringify({ username, topicId, checkedIndexes })
             });
             const data = await res.json();
-            alert(data.message || 'Đã mở khóa tới bài được chọn!');
+            alert(data.message || 'Đã lưu danh sách bài tick!');
             await loadAdminStudents();
         }
 
-        // Khóa lại từ bài đang chọn trong select trở đi (chỉ mở tới bài ngay trước bài được chọn)
-        async function adminRowLockFromLesson(username) {
-            const targetTopic = Number(document.getElementById('adminTargetTopicSelect').value);
-            const selectedLessonOrder = Number(document.getElementById('adminTargetLessonSelect').value);
-            const openLessonsBeforeSelected = targetTopic === 1
-                ? Math.max(1, selectedLessonOrder - 1)
-                : Math.max(0, selectedLessonOrder - 1);
-
+        async function adminRowResetLock(username) {
+            if (!confirm(`Reset khóa lại tiến độ của "${username}" về mặc định (Chủ đề 1 - Bài 1)?`)) return;
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    actionType: 'custom',
-                    targetTopic,
-                    targetLessons: openLessonsBeforeSelected
-                })
+                body: JSON.stringify({ username, actionType: 'reset_lock_all' })
             });
             const data = await res.json();
-            alert(`Đã khóa từ bài ${selectedLessonOrder} trở đi của Chủ Đề ${targetTopic} cho "${username}".`);
+            alert(data.message || 'Đã reset khóa!');
             await loadAdminStudents();
         }
 
@@ -893,33 +1038,32 @@
             }
         }
 
-        function showScreen(screenId) {
+        function showScreen(screenId, replaceUrl = false) {
+            currentScreenId = screenId;
             clearCredentialInputs();
             const container = document.getElementById('mainContainer');
             container.classList.toggle('admin-wide', screenId === 'screenAdminDashboard');
-            if (screenId === 'screenAdminDashboard') {
-                populateAdminLessonSelect();
-            }
             ['screenLogin', 'screenAdminLogin', 'screenAdminDashboard', 'screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz']
                 .forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
             updateGlobalSessionBar();
+            updateAddressBarForScreen(screenId, replaceUrl);
         }
 
-        function goToScreenTopics() {
+        function goToScreenTopics(replaceUrl = false) {
             stopQuestionTimer();
             renderTopicGrid();
-            showScreen('screenTopics');
+            showScreen('screenTopics', replaceUrl);
             document.getElementById('globalProgress').classList.add('hidden');
         }
 
-        function goToScreenModes() {
+        function goToScreenModes(replaceUrl = false) {
             stopQuestionTimer();
             const topic = topicsConfig.find(t => t.id === currentTopicId);
             const lessons = getLessonsOfCurrentTopic();
             const unlockedCount = getUnlockedLessonsCount(currentTopicId);
             document.getElementById('modeTopicTitle').textContent = `${topic.title}: ${topic.name} (${unlockedCount}/${lessons.length} bài mở)`;
-            showScreen('screenModes');
+            showScreen('screenModes', replaceUrl);
         }
 
         function renderTopicGrid() {
@@ -968,17 +1112,19 @@
             updateLessonSelect();
             const lessons = getLessonsOfCurrentTopic();
             if (!lessons.length) return;
-            const lastUnlockedIdx = Math.max(0, getUnlockedLessonsCount(currentTopicId) - 1);
-            document.getElementById('lessonSelect').value = lastUnlockedIdx;
-            loadLessonVerses(lastUnlockedIdx);
+            const openIndexes = getUnlockedLessonIndexes(currentTopicId);
+            const startIdx = openIndexes.length ? openIndexes[0] : 0;
+            document.getElementById('lessonSelect').value = startIdx;
+            loadLessonVerses(startIdx);
             showScreen('screenFlashcard');
         }
 
         function startModeMix() {
             studyMode = 'mix';
             document.getElementById('lessonSelectContainer').classList.add('hidden');
-            const unlockedCount = getUnlockedLessonsCount(currentTopicId);
-            const rawLessons = getLessonsOfCurrentTopic().slice(0, unlockedCount);
+            const openIndexes = getUnlockedLessonIndexes(currentTopicId);
+            const allLessons = getLessonsOfCurrentTopic();
+            const rawLessons = openIndexes.map(idx => allLessons[idx]).filter(Boolean);
             activeVerses = [];
             rawLessons.forEach(lesson => {
                 lesson.verses.forEach(v => activeVerses.push({ lessonTitle: lesson.title, ref: v.ref, text: v.text }));
@@ -995,9 +1141,9 @@
         function updateLessonSelect() {
             const select = document.getElementById('lessonSelect');
             select.innerHTML = '';
-            const unlockedCount = getUnlockedLessonsCount(currentTopicId);
+            const openIndexes = getUnlockedLessonIndexes(currentTopicId);
             getLessonsOfCurrentTopic().forEach((lesson, index) => {
-                const isOpen = index < unlockedCount;
+                const isOpen = openIndexes.includes(index);
                 const opt = document.createElement('option');
                 opt.value = index;
                 opt.disabled = !isOpen;
@@ -1008,7 +1154,7 @@
 
         function changeLesson() {
             const idx = parseInt(document.getElementById('lessonSelect').value);
-            if (idx < getUnlockedLessonsCount(currentTopicId)) {
+            if (isLessonUnlocked(currentTopicId, idx)) {
                 loadLessonVerses(idx);
             }
         }
@@ -1114,16 +1260,16 @@
             if (type === 1 || type === 2) {
                 const select = document.getElementById('quizLessonSelect');
                 select.innerHTML = '';
-                const unlockedCount = getUnlockedLessonsCount(currentTopicId);
+                const openIndexes = getUnlockedLessonIndexes(currentTopicId);
                 getLessonsOfCurrentTopic().forEach((lesson, index) => {
-                    const isOpen = index < unlockedCount;
+                    const isOpen = openIndexes.includes(index);
                     const opt = document.createElement('option');
                     opt.value = index;
                     opt.disabled = !isOpen;
                     opt.textContent = isOpen ? lesson.title : `🔒 ${lesson.title} (Chưa mở khóa)`;
                     select.appendChild(opt);
                 });
-                select.value = Math.max(0, unlockedCount - 1);
+                select.value = openIndexes.length ? openIndexes[0] : 0;
                 showScreen('screenQuizSelectLesson');
             } else {
                 startQuizMode();
@@ -1149,8 +1295,8 @@
                 bank = chosenLesson.verses.map(v => ({ ref: v.ref, text: v.text, lesson: chosenLesson.title }));
                 if (activeQuizType === 1) poolWrongAnswers = chosenLesson.verses.map(v => v.ref);
             } else {
-                const unlockedCount = getUnlockedLessonsCount(currentTopicId);
-                const eligibleLessons = rawLessons.slice(0, unlockedCount);
+                const openIndexes = getUnlockedLessonIndexes(currentTopicId);
+                const eligibleLessons = openIndexes.map(idx => rawLessons[idx]).filter(Boolean);
                 document.getElementById('quizTopicName').textContent = `ĐANG KIỂM TRA TỔNG HỢP: ${topic.title}`;
                 eligibleLessons.forEach(l => l.verses.forEach(v => bank.push({ ref: v.ref, text: v.text, lesson: l.title })));
             }
