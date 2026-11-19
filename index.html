@@ -439,14 +439,19 @@
     <script>
         const SECONDS_PER_QUESTION = 60;
         const AWAY_LOGOUT_SECONDS = 60;
+        const QUIZ_LOCK_TTL_MS = 5 * 60 * 1000;
+        const tabInstanceId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
         const STORAGE_KEYS = {
             student: 'bible_persistent_student_v1',
-            admin: 'bible_persistent_admin_v1',
+            adminToken: 'bible_admin_token_v1',
             awaySince: 'bible_away_since_v1',
             forceUnlock: 'bible_force_unlock_v1',
-            navState: 'bible_nav_state_v1'
+            navState: 'bible_nav_state_v1',
+            quizLock: 'bible_active_quiz_lock_v1'
         };
+
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('bible_lms_sync_v1') : null;
 
         let bibleData = [];
         let currentTopicId = 1;
@@ -467,6 +472,7 @@
 
         let authMode = 'login';
         let currentStudent = null;
+        let adminToken = '';
         let isAdminLoggedIn = false;
         let awaySinceTimestamp = null;
         let adminStudentsCache = [];
@@ -502,6 +508,62 @@
             { id: 4, title: "Chủ Đề 4", name: "Bài 31 đến Bài 40", start: 31, end: 40 },
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
+
+        function broadcastSync(type, payload = {}) {
+            if (syncChannel) {
+                syncChannel.postMessage({ type, payload, sender: tabInstanceId, ts: Date.now() });
+            }
+        }
+
+        if (syncChannel) {
+            syncChannel.onmessage = async (event) => {
+                const msg = event.data || {};
+                if (!msg.sender || msg.sender === tabInstanceId) return;
+                if (msg.type === 'force_logout') {
+                    stopQuestionTimer();
+                    releaseQuizLockIfOwned();
+                    currentStudent = null;
+                    adminToken = '';
+                    isAdminLoggedIn = false;
+                    clearAllAuthStorage();
+                    location.reload();
+                } else if (msg.type === 'admin_data_changed' && isAdminLoggedIn) {
+                    await refreshAdminAll();
+                }
+            };
+        }
+
+        function getAdminHeaders(extra = {}) {
+            return {
+                ...extra,
+                ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {})
+            };
+        }
+
+        function acquireQuizLock() {
+            const raw = localStorage.getItem(STORAGE_KEYS.quizLock);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.owner && parsed.owner !== tabInstanceId && (Date.now() - Number(parsed.ts || 0)) < QUIZ_LOCK_TTL_MS) {
+                        return false;
+                    }
+                } catch {}
+            }
+            localStorage.setItem(STORAGE_KEYS.quizLock, JSON.stringify({ owner: tabInstanceId, ts: Date.now() }));
+            return true;
+        }
+
+        function releaseQuizLockIfOwned() {
+            const raw = localStorage.getItem(STORAGE_KEYS.quizLock);
+            if (!raw) return;
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed.owner === tabInstanceId) {
+                    localStorage.removeItem(STORAGE_KEYS.quizLock);
+                }
+            } catch {}
+        }
 
         function saveNavState(screenId) {
             localStorage.setItem(STORAGE_KEYS.navState, JSON.stringify({
@@ -612,19 +674,30 @@
 
         function clearAllAuthStorage() {
             localStorage.removeItem(STORAGE_KEYS.student);
-            localStorage.removeItem(STORAGE_KEYS.admin);
+            localStorage.removeItem(STORAGE_KEYS.adminToken);
             localStorage.removeItem(STORAGE_KEYS.awaySince);
             localStorage.removeItem(STORAGE_KEYS.navState);
+            releaseQuizLockIfOwned();
             sessionStorage.clear();
         }
 
-        function logoutAndReload(reasonMessage = '') {
+        async function logoutAndReload(reasonMessage = '') {
             stopQuestionTimer();
+            if (isAdminLoggedIn && adminToken) {
+                try {
+                    await fetch('/api/admin/logout', {
+                        method: 'POST',
+                        headers: getAdminHeaders()
+                    });
+                } catch {}
+            }
             currentStudent = null;
+            adminToken = '';
             isAdminLoggedIn = false;
             awaySinceTimestamp = null;
             clearAllAuthStorage();
             clearCredentialInputs();
+            broadcastSync('force_logout');
             updateAddressBarForScreen('screenLogin', true);
             if (reasonMessage) alert(reasonMessage);
             location.reload();
@@ -667,10 +740,10 @@
             const text = document.getElementById('globalSessionText');
             if (isAdminLoggedIn) {
                 bar.classList.remove('hidden');
-                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (giữ đăng nhập khi refresh • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
+                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (token bảo mật • đồng bộ đa tab • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
             } else if (currentStudent) {
                 bar.classList.remove('hidden');
-                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (giữ đăng nhập khi refresh • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
+                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (đồng bộ đa tab • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
             } else {
                 bar.classList.add('hidden');
             }
@@ -849,7 +922,8 @@
                 }
                 clearCredentialInputs();
                 isAdminLoggedIn = false;
-                localStorage.removeItem(STORAGE_KEYS.admin);
+                adminToken = '';
+                localStorage.removeItem(STORAGE_KEYS.adminToken);
                 currentStudent = normalizeStudentObj(data.student);
                 localStorage.setItem(STORAGE_KEYS.student, JSON.stringify(currentStudent));
                 document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
@@ -894,6 +968,19 @@
             }
         }
 
+        async function verifyAndRestoreAdminToken(token) {
+            try {
+                const res = await fetch('/api/admin/verify', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!res.ok) return false;
+                const data = await res.json();
+                return Boolean(data.success && data.valid);
+            } catch {
+                return false;
+            }
+        }
+
         async function loadDatabase() {
             try {
                 clearCredentialInputs();
@@ -913,14 +1000,21 @@
                     document.getElementById('btnStudentAuth').textContent = 'Đăng Ký Ngay ✨';
                 }
 
-                if (localStorage.getItem(STORAGE_KEYS.admin) === 'true') {
-                    isAdminLoggedIn = true;
-                    updateGlobalSessionBar();
-                    checkTabReturnTimeout();
-                    if (!isAdminLoggedIn) return;
-                    await refreshAdminAll();
-                    showScreen('screenAdminDashboard', true);
-                    return;
+                const savedAdminToken = localStorage.getItem(STORAGE_KEYS.adminToken);
+                if (savedAdminToken) {
+                    const valid = await verifyAndRestoreAdminToken(savedAdminToken);
+                    if (valid) {
+                        adminToken = savedAdminToken;
+                        isAdminLoggedIn = true;
+                        updateGlobalSessionBar();
+                        checkTabReturnTimeout();
+                        if (!isAdminLoggedIn) return;
+                        await refreshAdminAll();
+                        showScreen('screenAdminDashboard', true);
+                        return;
+                    } else {
+                        localStorage.removeItem(STORAGE_KEYS.adminToken);
+                    }
                 }
 
                 const savedObj = localStorage.getItem(STORAGE_KEYS.student);
@@ -950,7 +1044,7 @@
                     restoreStudentScreen(targetScreen, true);
                 } else {
                     updateGlobalSessionBar();
-                    if (requestedScreenFromUrl === 'screenAdminLogin') {
+                    if (requestedScreenFromUrl === 'screenAdminLogin' || requestedScreenFromUrl === 'screenAdminDashboard') {
                         showScreen('screenAdminLogin', true);
                     } else {
                         showScreen('screenLogin', true);
@@ -963,9 +1057,13 @@
 
         window.addEventListener('popstate', async () => {
             const targetScreen = pathToScreenMap[window.location.pathname] || 'screenLogin';
-            if (isAdminLoggedIn && targetScreen === 'screenAdminDashboard') {
-                await refreshAdminAll();
-                showScreen('screenAdminDashboard', true);
+            if (targetScreen === 'screenAdminDashboard') {
+                if (isAdminLoggedIn && adminToken) {
+                    await refreshAdminAll();
+                    showScreen('screenAdminDashboard', true);
+                } else {
+                    showScreen('screenAdminLogin', true);
+                }
                 return;
             }
             if (currentStudent && ['screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz'].includes(targetScreen)) {
@@ -988,10 +1086,11 @@
                     body: JSON.stringify({ username: user, password: pass })
                 });
                 const data = await res.json();
-                if (res.ok && data.success) {
+                if (res.ok && data.success && data.token) {
                     clearCredentialInputs();
+                    adminToken = data.token;
                     isAdminLoggedIn = true;
-                    localStorage.setItem(STORAGE_KEYS.admin, 'true');
+                    localStorage.setItem(STORAGE_KEYS.adminToken, adminToken);
                     updateGlobalSessionBar();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
@@ -1003,6 +1102,14 @@
             }
         }
 
+        function handleAdminApiUnauthorized(res) {
+            if (res.status === 401) {
+                logoutAndReload('🔐 Phiên Admin đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.');
+                return true;
+            }
+            return false;
+        }
+
         async function refreshAdminAll() {
             await Promise.all([loadAdminStudents(), loadAdminResults()]);
         }
@@ -1012,7 +1119,8 @@
                 const allChk = document.getElementById('checkAllStudents');
                 if (allChk) allChk.checked = false;
 
-                const res = await fetch('/api/admin/students');
+                const res = await fetch('/api/admin/students', { headers: getAdminHeaders() });
+                if (handleAdminApiUnauthorized(res)) return;
                 const users = await res.json();
                 adminStudentsCache = Array.isArray(users) ? users : [];
 
@@ -1072,12 +1180,14 @@
 
             const res = await fetch('/api/admin/set-checked-lessons', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ username, topicId, checkedIndexes })
             });
+            if (handleAdminApiUnauthorized(res)) return;
             const data = await res.json();
             alert(data.message || 'Đã lưu danh sách bài tick!');
             await loadAdminStudents();
+            broadcastSync('admin_data_changed');
         }
 
         async function adminResetStudentLock() {
@@ -1087,12 +1197,14 @@
 
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ username, actionType: 'reset_lock_all' })
             });
+            if (handleAdminApiUnauthorized(res)) return;
             const data = await res.json();
             alert(data.message || 'Đã khóa lại tiến độ!');
             await loadAdminStudents();
+            broadcastSync('admin_data_changed');
         }
 
         async function adminDeleteCheckedStudents() {
@@ -1108,15 +1220,17 @@
             const deleteResults = confirm(`Xóa ${targets.length} tài khoản (${targets.join(', ')})? Bấm OK để xóa kèm điểm thi của các tài khoản này, hoặc Cancel để chỉ xóa tài khoản.`);
 
             for (const username of targets) {
-                await fetch('/api/admin/delete-student', {
+                const res = await fetch('/api/admin/delete-student', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ username, deleteResults })
                 });
+                if (handleAdminApiUnauthorized(res)) return;
             }
 
             alert(`Đã xóa ${targets.length} tài khoản đã chọn.`);
             await refreshAdminAll();
+            broadcastSync('admin_data_changed');
         }
 
         async function adminDeleteCheckedResults() {
@@ -1128,42 +1242,48 @@
 
             const res = await fetch('/api/admin/delete-results-bulk', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ ids })
             });
+            if (handleAdminApiUnauthorized(res)) return;
             const data = await res.json();
             if (!res.ok || !data.success) {
                 return alert(data.message || 'Không xóa được các dòng đã chọn.');
             }
             alert(data.message || 'Đã xóa các dòng kết quả đã tick!');
             await loadAdminResults();
+            broadcastSync('admin_data_changed');
         }
 
         async function adminDeleteSingleResult(resultId) {
             if (!confirm('Xóa dòng kết quả kiểm tra này?')) return;
             const res = await fetch('/api/admin/delete-result', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ id: resultId })
             });
+            if (handleAdminApiUnauthorized(res)) return;
             const data = await res.json();
             if (!res.ok || !data.success) {
                 alert(data.message || 'Không xóa được dòng điểm này.');
                 return;
             }
             await loadAdminResults();
+            broadcastSync('admin_data_changed');
         }
 
         async function adminResetAllResults() {
             if (!confirm('Reset (xóa) TOÀN BỘ kết quả kiểm tra của tất cả học viên?')) return;
             const res = await fetch('/api/admin/reset-results', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAdminHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ studentName: '' })
             });
+            if (handleAdminApiUnauthorized(res)) return;
             const data = await res.json();
             alert(data.message || 'Đã reset kết quả!');
             await loadAdminResults();
+            broadcastSync('admin_data_changed');
         }
 
         async function loadAdminResults() {
@@ -1171,7 +1291,8 @@
                 const allChk = document.getElementById('checkAllResults');
                 if (allChk) allChk.checked = false;
 
-                const res = await fetch('/api/admin/results');
+                const res = await fetch('/api/admin/results', { headers: getAdminHeaders() });
+                if (handleAdminApiUnauthorized(res)) return;
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || 'Lỗi tải dữ liệu từ server.');
                 const results = Array.isArray(data) ? data : (data.results || []);
@@ -1200,6 +1321,9 @@
         }
 
         function showScreen(screenId, replaceUrl = false) {
+            if (screenId !== 'screenQuiz') {
+                releaseQuizLockIfOwned();
+            }
             clearCredentialInputs();
             const container = document.getElementById('mainContainer');
             container.classList.toggle('admin-wide', screenId === 'screenAdminDashboard');
@@ -1402,6 +1526,7 @@
                 if (remainingQuestionSeconds <= 0) {
                     stopQuestionTimer();
                     quizTimedOut = true;
+                    releaseQuizLockIfOwned();
                     document.querySelectorAll('.quiz-option-btn').forEach(b => b.disabled = true);
                     document.getElementById('btnNextQuiz').classList.add('hidden');
 
@@ -1420,6 +1545,7 @@
 
         function exitQuizEarly() {
             stopQuestionTimer();
+            releaseQuizLockIfOwned();
             goToScreenModes();
         }
 
@@ -1452,6 +1578,12 @@
         }
 
         function startQuizMode() {
+            if (!acquireQuizLock()) {
+                alert('⚠️ Đang có một bài kiểm tra mở ở tab khác. Vui lòng hoàn thành hoặc đóng bài kiểm tra ở tab kia trước.');
+                goToScreenModes();
+                return;
+            }
+
             const topic = topicsConfig.find(t => t.id === currentTopicId);
             const rawLessons = getLessonsOfCurrentTopic();
             let bank = [];
@@ -1462,6 +1594,7 @@
             if (activeQuizType === 1 || activeQuizType === 2) {
                 const chosenLesson = rawLessons[selectedLessonForQuizIndex];
                 if (!chosenLesson) {
+                    releaseQuizLockIfOwned();
                     goToScreenModes();
                     return;
                 }
@@ -1476,6 +1609,7 @@
             }
 
             if (!bank.length) {
+                releaseQuizLockIfOwned();
                 alert("Chưa có câu Kinh Thánh nào để kiểm tra!");
                 goToScreenModes();
                 return;
@@ -1559,6 +1693,8 @@
                 const data = await res.json();
                 if (!res.ok || !data.success) {
                     alert("Lưu điểm về Admin thất bại: " + (data.message || "Lỗi máy chủ"));
+                } else {
+                    broadcastSync('admin_data_changed');
                 }
             } catch (e) {
                 alert("Không thể gửi kết quả về server quản trị: " + e.message);
@@ -1580,6 +1716,7 @@
                 loadQuizQuestion(poolWrongAnswers);
             } else {
                 stopQuestionTimer();
+                releaseQuizLockIfOwned();
                 const totalMax = quizList.length * 10;
                 const passed = quizScore >= totalMax / 2;
                 const chosenLessonTitle = (activeQuizType === 1 || activeQuizType === 2)
@@ -1597,6 +1734,7 @@
             }
         }
 
+        window.addEventListener('beforeunload', releaseQuizLockIfOwned);
         window.onload = loadDatabase;
     </script>
 </body>
