@@ -18,8 +18,6 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(String(password)).digest('hex');
 }
 
-// Schema tài khoản học viên & tiến độ mở khóa theo chủ đề + từng bài
-// unlockedByTopic: { "1": 1, "2": 0, "3": 0, "4": 0, "5": 0 } -> số bài đã mở khóa trong từng chủ đề (0..10)
 const studentUserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true, lowercase: true },
     passwordHash: { type: String, required: true },
@@ -33,7 +31,6 @@ const studentUserSchema = new mongoose.Schema({
 
 const StudentUser = mongoose.model('StudentUser', studentUserSchema);
 
-// Schema lưu kết quả kiểm tra
 const bibleQuizResultSchema = new mongoose.Schema({
     studentName: { type: String, required: true, trim: true },
     topicId: { type: Number, required: true },
@@ -46,7 +43,6 @@ const bibleQuizResultSchema = new mongoose.Schema({
 
 const BibleQuizResult = mongoose.model('BibleQuizResult', bibleQuizResultSchema);
 
-// Chuẩn hóa tiến độ học viên (đảm bảo luôn đủ 5 chủ đề, mỗi chủ đề tối đa 10 bài)
 function normalizeProgress(userDoc) {
     const mapObj = userDoc.unlockedByTopic instanceof Map
         ? Object.fromEntries(userDoc.unlockedByTopic)
@@ -60,7 +56,6 @@ function normalizeProgress(userDoc) {
         "5": Math.min(10, Math.max(0, Number(mapObj["5"] ?? 0)))
     };
 
-    // Nếu chủ đề i+1 đã mở thì chủ đề i chắc chắn đủ 10 bài
     let unlockedTopic = Number(userDoc.unlockedTopic || 1);
     for (let t = 1; t < unlockedTopic; t++) {
         progress[String(t)] = 10;
@@ -76,7 +71,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Đăng ký tài khoản học viên
 app.post('/api/student/register', async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
@@ -114,7 +108,6 @@ app.post('/api/student/register', async (req, res) => {
     }
 });
 
-// Đăng nhập tài khoản học viên
 app.post('/api/student/login', async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
@@ -141,8 +134,6 @@ app.post('/api/student/login', async (req, res) => {
     }
 });
 
-// API cập nhật tiến độ mở khóa từng bài / chủ đề của học viên
-// completedLessonCountInTopic: số bài đã mở trong topicId (1..10)
 app.post('/api/student/progress', async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
@@ -165,7 +156,6 @@ app.post('/api/student/progress', async (req, res) => {
         prog.unlockedByTopic[key] = clampedLessons;
 
         let nextTopicUnlocked = false;
-        // Nếu đã mở khóa hết tất cả bài của chủ đề hiện tại -> mở chủ đề tiếp theo (bắt đầu từ bài 1)
         if (clampedLessons >= totalLessonsInTopic && topicId < 5) {
             const nextKey = String(topicId + 1);
             if (prog.unlockedTopic < topicId + 1) {
@@ -192,7 +182,6 @@ app.post('/api/student/progress', async (req, res) => {
     }
 });
 
-// API Đăng nhập Admin
 app.post('/api/admin/login', (req, res) => {
     const { username, password } = req.body || {};
     const ADMIN_USER = process.env.ADMIN_USER || "admin";
@@ -204,26 +193,32 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị!' });
 });
 
-// API Nhận kết quả Quiz từ học viên
 app.post('/api/submit-quiz', async (req, res) => {
     try {
-        const { studentName, topicId, quizType, lessonTitle, score, total, date } = req.body || {};
+        const studentName = String(req.body?.studentName || '').trim();
+        const topicId = Number(req.body?.topicId);
+        const quizType = Number(req.body?.quizType);
+        const lessonTitle = String(req.body?.lessonTitle || '').trim();
+        const score = Number(req.body?.score);
+        const total = Number(req.body?.total);
+        const date = req.body?.date;
 
-        if (!studentName || score === undefined) {
-            return res.status(400).json({ success: false, message: 'Thiếu thông tin học viên hoặc điểm số!' });
+        if (!studentName || !Number.isFinite(topicId) || !Number.isFinite(quizType) || !Number.isFinite(score) || !Number.isFinite(total)) {
+            return res.status(400).json({ success: false, message: 'Thiếu hoặc sai định dạng dữ liệu bài kiểm tra!' });
         }
 
         const record = new BibleQuizResult({
-            studentName: String(studentName).trim(),
+            studentName,
             topicId,
             quizType,
-            lessonTitle: lessonTitle || '',
+            lessonTitle,
             score,
             total,
             ...(date ? { date } : {})
         });
 
         await record.save();
+        console.log(`📝 Đã lưu điểm của ${studentName} (Chủ đề ${topicId}, KT ${quizType}): ${score}/${total}`);
         return res.json({ success: true, message: 'Đã lưu kết quả vào MongoDB thành công!' });
     } catch (err) {
         console.error('Lỗi lưu kết quả MongoDB:', err.message);
@@ -231,7 +226,6 @@ app.post('/api/submit-quiz', async (req, res) => {
     }
 });
 
-// API Cho Admin xem danh sách kết quả
 app.get('/api/admin/results', async (req, res) => {
     try {
         const results = await BibleQuizResult.find().sort({ createdAt: -1 }).limit(200);
