@@ -221,8 +221,8 @@
         let activeQuizType = 3;
         let selectedLessonForQuizIndex = 0;
 
-        let authMode = 'login'; // 'login' | 'register'
-        let currentStudent = null; // { username, unlockedTopic, unlockedByTopic: { "1": 1..10, ... } }
+        let authMode = 'login';
+        let currentStudent = null;
 
         const topicsConfig = [
             { id: 1, title: "Chủ Đề 1", name: "Bài 1 đến Bài 10", start: 1, end: 10 },
@@ -231,6 +231,22 @@
             { id: 4, title: "Chủ Đề 4", name: "Bài 31 đến Bài 40", start: 31, end: 40 },
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
+
+        function normalizeStudentObj(student) {
+            if (!student) return null;
+            const rawMap = student.unlockedByTopic || {};
+            return {
+                username: student.username,
+                unlockedTopic: Number(student.unlockedTopic || 1),
+                unlockedByTopic: {
+                    "1": Number(rawMap["1"] ?? 1),
+                    "2": Number(rawMap["2"] ?? 0),
+                    "3": Number(rawMap["3"] ?? 0),
+                    "4": Number(rawMap["4"] ?? 0),
+                    "5": Number(rawMap["5"] ?? 0)
+                }
+            };
+        }
 
         function isForceUnlocked() {
             return localStorage.getItem('forceUnlockAllBible') === 'true';
@@ -246,7 +262,6 @@
             return Number(currentStudent?.unlockedTopic || 1);
         }
 
-        // Số bài đã mở khóa trong chủ đề topicId (1..totalLessons)
         function getUnlockedLessonsCount(topicId) {
             const totalInTopic = getLessonsOfTopic(topicId).length || 10;
             if (isForceUnlocked()) return totalInTopic;
@@ -255,7 +270,6 @@
             return Math.min(totalInTopic, Math.max(0, val));
         }
 
-        // Chủ đề tiếp theo chỉ mở khi tất cả bài của chủ đề trước đã mở khóa hết
         function isTopicUnlocked(topicId) {
             if (isForceUnlocked()) return true;
             if (topicId === 1) return true;
@@ -279,7 +293,7 @@
                 });
                 const data = await res.json();
                 if (data.success && data.student) {
-                    currentStudent = data.student;
+                    currentStudent = normalizeStudentObj(data.student);
                     localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
                     if (data.nextTopicUnlocked) {
                         alert(`🎉 Bạn đã mở khóa hết các bài của Chủ Đề ${topicId}! Chủ Đề ${topicId + 1} đã được mở khóa!`);
@@ -290,9 +304,9 @@
             }
         }
 
-        // Khi hoàn thành một bài (index 0-based là relativeIndex), mở khóa bài kế tiếp (relativeIndex + 2)
         async function unlockNextLessonInTopic(topicId, completedRelativeIndex) {
             if (!currentStudent) return;
+            currentStudent = normalizeStudentObj(currentStudent);
             const lessons = getLessonsOfTopic(topicId);
             const total = lessons.length || 10;
             const currentUnlocked = getUnlockedLessonsCount(topicId);
@@ -334,11 +348,11 @@
                     body: JSON.stringify({ username, password })
                 });
                 const data = await res.json();
-                if (!data.success) {
-                    alert(data.message);
+                if (!res.ok || !data.success) {
+                    alert(data.message || 'Xác thực thất bại!');
                     return;
                 }
-                currentStudent = data.student;
+                currentStudent = normalizeStudentObj(data.student);
                 localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
                 document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
                 goToScreenTopics();
@@ -363,7 +377,7 @@
 
                 const savedObj = localStorage.getItem('loggedInStudentObjBible');
                 if (savedObj) {
-                    currentStudent = JSON.parse(savedObj);
+                    currentStudent = normalizeStudentObj(JSON.parse(savedObj));
                     document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
                     goToScreenTopics();
                 } else {
@@ -384,11 +398,11 @@
                     body: JSON.stringify({ username: user, password: pass })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    loadAdminResults();
+                if (res.ok && data.success) {
+                    await loadAdminResults();
                     showScreen('screenAdminDashboard');
                 } else {
-                    alert(data.message);
+                    alert(data.message || 'Đăng nhập Admin thất bại!');
                 }
             } catch (e) {
                 alert("Lỗi kết nối đến server quản trị!");
@@ -403,7 +417,11 @@
         async function loadAdminResults() {
             try {
                 const res = await fetch('/api/admin/results');
-                const results = await res.json();
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'Lỗi tải dữ liệu từ server.');
+                }
+                const results = Array.isArray(data) ? data : (data.results || []);
                 const tbody = document.getElementById('adminResultsTableBody');
                 tbody.innerHTML = '';
                 if (!results.length) {
@@ -421,7 +439,7 @@
                     tbody.appendChild(tr);
                 });
             } catch (e) {
-                alert("Không thể tải danh sách kết quả từ server.");
+                alert("Không thể tải danh sách kết quả từ server: " + e.message);
             }
         }
 
@@ -709,7 +727,7 @@
                 alert(`🎉 Bạn đã hoàn thành bài kiểm tra!\nĐiểm số: ${quizScore} / ${totalMax}`);
 
                 try {
-                    await fetch('/api/submit-quiz', {
+                    const res = await fetch('/api/submit-quiz', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -721,8 +739,12 @@
                             total: totalMax
                         })
                     });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        alert("Lưu điểm về Admin thất bại: " + (data.message || "Lỗi máy chủ"));
+                    }
                 } catch (e) {
-                    console.error("Không thể gửi kết quả về server quản trị.");
+                    alert("Không thể gửi kết quả về server quản trị: " + e.message);
                 }
 
                 if (passed && (activeQuizType === 1 || activeQuizType === 2)) {
