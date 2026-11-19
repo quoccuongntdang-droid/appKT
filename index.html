@@ -108,30 +108,29 @@
                 <button type="button" id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Đăng nhập</button>
                 <button type="button" id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Đăng ký tài khoản</button>
             </div>
-            <div class="login-box">
-                <input type="text" id="studentUsernameInput" placeholder="Tên tài khoản học viên...">
-                <input type="password" id="studentPasswordInput" placeholder="Mật khẩu...">
-                <button class="btn-primary" id="btnStudentAuth" onclick="submitStudentAuth()">Đăng Nhập 🚀</button>
-                <button class="admin-link-btn" onclick="showScreen('screenAdminLogin')">🔐 Đăng nhập tài khoản Quản trị (Admin)</button>
-            </div>
+            <form class="login-box" autocomplete="off" onsubmit="event.preventDefault(); submitStudentAuth();">
+                <input type="text" id="studentUsernameInput" name="bible_stu_u" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Tên tài khoản học viên...">
+                <input type="password" id="studentPasswordInput" name="bible_stu_p" autocomplete="new-password" placeholder="Mật khẩu...">
+                <button type="submit" class="btn-primary" id="btnStudentAuth">Đăng Nhập 🚀</button>
+                <button type="button" class="admin-link-btn" onclick="showScreen('screenAdminLogin')">🔐 Đăng nhập tài khoản Quản trị (Admin)</button>
+            </form>
         </div>
 
         <!-- ĐĂNG NHẬP ADMIN -->
         <div id="screenAdminLogin" class="hidden">
-            <button class="btn-back" onclick="showScreen('screenLogin')">⬅️ Quay lại</button>
+            <button type="button" class="btn-back" onclick="showScreen('screenLogin')">⬅️ Quay lại</button>
             <h3 style="color: #c0392b; text-align: center;">Khu Vực Quản Trị Admin</h3>
-            <div class="login-box">
-                <input type="text" id="adminUser" placeholder="Tên đăng nhập quản trị...">
-                <input type="password" id="adminPass" placeholder="Mật khẩu quản trị...">
-                <button class="btn-primary" style="background: #c0392b;" onclick="loginAsAdmin()">Đăng Nhập Admin 🔒</button>
-            </div>
+            <form class="login-box" autocomplete="off" onsubmit="event.preventDefault(); loginAsAdmin();">
+                <input type="text" id="adminUser" name="bible_adm_u" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Tên đăng nhập quản trị...">
+                <input type="password" id="adminPass" name="bible_adm_p" autocomplete="new-password" placeholder="Mật khẩu quản trị...">
+                <button type="submit" class="btn-primary" style="background: #c0392b;">Đăng Nhập Admin 🔒</button>
+            </form>
         </div>
 
         <!-- DASHBOARD ADMIN -->
         <div id="screenAdminDashboard" class="hidden">
             <h3 style="color: #2c3e50; text-align: center; margin-top: 0;">📊 Bảng Quản Trị Học Viên & Điểm Số</h3>
 
-            <!-- BẢNG HỌC VIÊN + CÁC NÚT BÊN CẠNH BẢNG & TỪNG DÒNG -->
             <div class="admin-section">
                 <h4>👤 Danh Sách Tài Khoản Học Viên</h4>
                 <div class="admin-table-layout">
@@ -173,7 +172,6 @@
                 </div>
             </div>
 
-            <!-- BẢNG KẾT QUẢ KIỂM TRA + CÁC NÚT BÊN CẠNH BẢNG & TỪNG DÒNG -->
             <div class="admin-section">
                 <h4>📝 Kết Quả Kiểm Tra</h4>
                 <div class="admin-table-layout">
@@ -204,7 +202,7 @@
         <div id="screenTopics" class="hidden">
             <div class="unlock-toggle-bar">
                 <span id="unlockModeStatus" style="font-size: 12px; font-weight: bold; color: #2c3e50;">Chế độ: Tuần tự từng bài</span>
-                <button class="btn-toggle-unlock" onclick="toggleForceUnlock()">🔄 Đổi chế độ</button>
+                <button type="button" class="btn-toggle-unlock" onclick="toggleForceUnlock()">🔄 Đổi chế độ</button>
             </div>
             <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 15px;">
                 Tài khoản: <b id="currentStudentDisplay" style="color: #e67e22;"></b>. Mở hết bài trong chủ đề để mở chủ đề kế tiếp!
@@ -214,30 +212,30 @@
 
         <!-- MÀN HÌNH 2: CHỌN CHẾ ĐỘ TRONG CHỦ ĐỀ -->
         <div id="screenModes" class="hidden">
-            <button class="btn-back" onclick="goToScreenTopics()">⬅️ Quay lại danh sách Chủ đề</button>
+            <button type="button" class="btn-back" onclick="goToScreenTopics()">⬅️ Quay lại danh sách Chủ đề</button>
             <h3 id="modeTopicTitle" style="color: #2980b9; text-align: center; margin-top: 0;">Chủ đề</h3>
             <div class="mode-container">
-                <button class="btn-mode" onclick="startModeLesson()">📚 Học Flashcard theo từng bài (Mở khóa từng bài)</button>
-                <button class="btn-random-mix" onclick="startModeMix()">🔀 Trộn đề Flashcard toàn chủ đề</button>
-                <button class="btn-quiz-1" onclick="prepareQuiz(1)">🎯 Kiểm tra 1: Theo từng bài (Đáp án trong bài)</button>
-                <button class="btn-quiz-2" onclick="prepareQuiz(2)">🎯 Kiểm tra 2: Theo từng bài (Đáp án trộn Chủ đề)</button>
-                <button class="btn-quiz-3" onclick="prepareQuiz(3)">🎯 Kiểm tra 3: Tổng hợp toàn Chủ đề</button>
+                <button type="button" class="btn-mode" onclick="startModeLesson()">📚 Học Flashcard theo từng bài (Mở khóa từng bài)</button>
+                <button type="button" class="btn-random-mix" onclick="startModeMix()">🔀 Trộn đề Flashcard toàn chủ đề</button>
+                <button type="button" class="btn-quiz-1" onclick="prepareQuiz(1)">🎯 Kiểm tra 1: Theo từng bài (Đáp án trong bài)</button>
+                <button type="button" class="btn-quiz-2" onclick="prepareQuiz(2)">🎯 Kiểm tra 2: Theo từng bài (Đáp án trộn Chủ đề)</button>
+                <button type="button" class="btn-quiz-3" onclick="prepareQuiz(3)">🎯 Kiểm tra 3: Tổng hợp toàn Chủ đề</button>
             </div>
         </div>
 
         <!-- CHỌN BÀI CHO QUIZ 1 & 2 -->
         <div id="screenQuizSelectLesson" class="hidden">
-            <button class="btn-back" onclick="goToScreenModes()">⬅️ Quay lại</button>
+            <button type="button" class="btn-back" onclick="goToScreenModes()">⬅️ Quay lại</button>
             <h3 id="quizSelectTitle" style="color: #1abc9c; text-align: center; margin-top: 0;">Chọn Bài Kiểm Tra</h3>
             <div class="controls">
                 <select id="quizLessonSelect"></select>
-                <button class="btn-primary" style="margin-top: 10px;" onclick="startSelectedLessonQuiz()">🚀 Bắt Đầu Làm Bài</button>
+                <button type="button" class="btn-primary" style="margin-top: 10px;" onclick="startSelectedLessonQuiz()">🚀 Bắt Đầu Làm Bài</button>
             </div>
         </div>
 
         <!-- FLASHCARD -->
         <div id="screenFlashcard" class="hidden">
-            <button class="btn-back" onclick="goToScreenModes()">⬅️ Đổi chế độ</button>
+            <button type="button" class="btn-back" onclick="goToScreenModes()">⬅️ Đổi chế độ</button>
             <div class="controls" id="lessonSelectContainer">
                 <select id="lessonSelect" onchange="changeLesson()"></select>
             </div>
@@ -255,15 +253,15 @@
                 </div>
             </div>
             <div class="nav-buttons">
-                <button class="btn-nav" onclick="prevVerse()">⬅️ Câu Trước</button>
-                <button class="btn-nav" onclick="nextVerse()">Câu Sau ➡️</button>
+                <button type="button" class="btn-nav" onclick="prevVerse()">⬅️ Câu Trước</button>
+                <button type="button" class="btn-nav" onclick="nextVerse()">Câu Sau ➡️</button>
             </div>
             <div class="progress" id="progressText">Đang khởi tạo...</div>
         </div>
 
         <!-- TRẮC NGHIỆM -->
         <div id="screenQuiz" class="hidden">
-            <button class="btn-back" onclick="exitQuizEarly()">⬅️ Thoát</button>
+            <button type="button" class="btn-back" onclick="exitQuizEarly()">⬅️ Thoát</button>
             <div class="quiz-box">
                 <div class="quiz-top-bar">
                     <span id="quizTopicName" style="color: #e67e22;">Chủ đề kiểm tra</span>
@@ -275,7 +273,7 @@
                 </div>
                 <div class="quiz-options" id="quizOptionsContainer"></div>
                 <div class="nav-buttons" style="margin-top: 10px;">
-                    <button class="btn-nav hidden" id="btnNextQuiz" onclick="nextQuizQuestion()">Câu Tiếp Theo ➡️</button>
+                    <button type="button" class="btn-nav hidden" id="btnNextQuiz" onclick="nextQuizQuestion()">Câu Tiếp Theo ➡️</button>
                 </div>
             </div>
             <div class="progress" id="quizProgressText">Điểm: 0 | Câu 1 / 10</div>
@@ -286,7 +284,7 @@
 
     <script>
         const SECONDS_PER_QUESTION = 60; // Thời gian làm mỗi câu trắc nghiệm (giây)
-        const SESSION_TIMEOUT_MINUTES = 15; // Tự động đăng xuất & reload sau 15 phút không thao tác
+        const AWAY_LOGOUT_SECONDS = 60; // Rời tab / chuyển sang app khác quá số giây này -> quay lại sẽ tự đăng xuất
 
         let bibleData = [];
         let currentTopicId = 1;
@@ -308,7 +306,7 @@
         let authMode = 'login';
         let currentStudent = null;
         let isAdminLoggedIn = false;
-        let sessionIdleTimer = null;
+        let awaySinceTimestamp = null;
 
         const topicsConfig = [
             { id: 1, title: "Chủ Đề 1", name: "Bài 1 đến Bài 10", start: 1, end: 10 },
@@ -318,9 +316,18 @@
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
 
+        function clearCredentialInputs() {
+            ['studentUsernameInput', 'studentPasswordInput', 'adminUser', 'adminPass'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
         function clearAllAuthStorage() {
-            localStorage.removeItem('loggedInStudentObjBible');
+            sessionStorage.removeItem('activeStudentSessionBible');
             sessionStorage.removeItem('adminSessionBible');
+            sessionStorage.removeItem('awaySinceBible');
+            localStorage.removeItem('loggedInStudentObjBible');
             localStorage.removeItem('lastActiveTimeBible');
         }
 
@@ -328,37 +335,54 @@
             stopQuestionTimer();
             currentStudent = null;
             isAdminLoggedIn = false;
+            awaySinceTimestamp = null;
             clearAllAuthStorage();
+            clearCredentialInputs();
             if (reasonMessage) alert(reasonMessage);
             location.reload();
         }
 
-        function resetIdleSessionTimer() {
-            const hasSession = Boolean(currentStudent || isAdminLoggedIn);
-            if (!hasSession) {
-                if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
-                return;
+        function markTabAway() {
+            if (!currentStudent && !isAdminLoggedIn) return;
+            if (!awaySinceTimestamp) {
+                awaySinceTimestamp = Date.now();
+                sessionStorage.setItem('awaySinceBible', String(awaySinceTimestamp));
             }
-            localStorage.setItem('lastActiveTimeBible', String(Date.now()));
-            if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
-            sessionIdleTimer = setTimeout(() => {
-                logoutAndReload(`⏰ Đã quá ${SESSION_TIMEOUT_MINUTES} phút không thao tác. Hệ thống tự động đăng xuất để bảo mật.`);
-            }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
         }
 
-        ['click', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
-            window.addEventListener(evt, resetIdleSessionTimer, { passive: true });
+        function checkTabReturnTimeout() {
+            if (!currentStudent && !isAdminLoggedIn) return;
+            const savedAway = awaySinceTimestamp || Number(sessionStorage.getItem('awaySinceBible') || 0);
+            if (savedAway) {
+                const elapsedSec = (Date.now() - savedAway) / 1000;
+                awaySinceTimestamp = null;
+                sessionStorage.removeItem('awaySinceBible');
+                if (elapsedSec >= AWAY_LOGOUT_SECONDS) {
+                    logoutAndReload(`🔒 Bạn đã rời khỏi tab/ứng dụng quá ${AWAY_LOGOUT_SECONDS} giây. Hệ thống đã tự động đăng xuất.`);
+                }
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                markTabAway();
+            } else {
+                checkTabReturnTimeout();
+            }
         });
+
+        window.addEventListener('blur', markTabAway);
+        window.addEventListener('focus', checkTabReturnTimeout);
 
         function updateGlobalSessionBar() {
             const bar = document.getElementById('globalSessionBar');
             const text = document.getElementById('globalSessionText');
             if (isAdminLoggedIn) {
                 bar.classList.remove('hidden');
-                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (tự đăng xuất sau ${SESSION_TIMEOUT_MINUTES}p không dùng)`;
+                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
             } else if (currentStudent) {
                 bar.classList.remove('hidden');
-                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (tự đăng xuất sau ${SESSION_TIMEOUT_MINUTES}p)`;
+                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
             } else {
                 bar.classList.add('hidden');
             }
@@ -381,11 +405,11 @@
         }
 
         function isForceUnlocked() {
-            return localStorage.getItem('forceUnlockAllBible') === 'true';
+            return sessionStorage.getItem('forceUnlockAllBible') === 'true';
         }
 
         function toggleForceUnlock() {
-            localStorage.setItem('forceUnlockAllBible', !isForceUnlocked());
+            sessionStorage.setItem('forceUnlockAllBible', String(!isForceUnlocked()));
             renderTopicGrid();
         }
 
@@ -426,7 +450,7 @@
                 const data = await res.json();
                 if (data.success && data.student) {
                     currentStudent = normalizeStudentObj(data.student);
-                    localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
+                    sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
                     if (data.nextTopicUnlocked) {
                         alert(`🎉 Bạn đã mở khóa hết các bài của Chủ Đề ${topicId}! Chủ Đề ${topicId + 1} đã được mở khóa!`);
                     }
@@ -452,13 +476,14 @@
                         currentStudent.unlockedByTopic[String(topicId + 1)] = 1;
                     }
                 }
-                localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
+                sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
                 await syncProgressToServer(topicId, nextCount, total);
             }
         }
 
         function switchAuthTab(mode) {
             authMode = mode;
+            clearCredentialInputs();
             document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
             document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
             document.getElementById('btnStudentAuth').textContent = mode === 'login' ? 'Đăng Nhập 🚀' : 'Đăng Ký Ngay ✨';
@@ -484,13 +509,13 @@
                     alert(data.message || 'Xác thực thất bại!');
                     return;
                 }
+                clearCredentialInputs();
                 isAdminLoggedIn = false;
                 sessionStorage.removeItem('adminSessionBible');
                 currentStudent = normalizeStudentObj(data.student);
-                localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
+                sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
                 document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
                 updateGlobalSessionBar();
-                resetIdleSessionTimer();
                 goToScreenTopics();
             } catch (e) {
                 alert('Lỗi kết nối tới máy chủ!');
@@ -499,10 +524,10 @@
 
         async function loadDatabase() {
             try {
-                const lastActive = Number(localStorage.getItem('lastActiveTimeBible') || 0);
-                if (lastActive && (Date.now() - lastActive) > SESSION_TIMEOUT_MINUTES * 60 * 1000) {
-                    clearAllAuthStorage();
-                }
+                // Không lưu vết đăng nhập qua localStorage
+                localStorage.removeItem('loggedInStudentObjBible');
+                localStorage.removeItem('lastActiveTimeBible');
+                clearCredentialInputs();
 
                 const response = await fetch('data.json');
                 if (!response.ok) throw new Error('Không thể tải file dữ liệu');
@@ -512,13 +537,14 @@
                 if (sessionStorage.getItem('adminSessionBible') === 'true') {
                     isAdminLoggedIn = true;
                     updateGlobalSessionBar();
-                    resetIdleSessionTimer();
+                    checkTabReturnTimeout();
+                    if (!isAdminLoggedIn) return;
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                     return;
                 }
 
-                const savedObj = localStorage.getItem('loggedInStudentObjBible');
+                const savedObj = sessionStorage.getItem('activeStudentSessionBible');
                 if (savedObj) {
                     const parsed = normalizeStudentObj(JSON.parse(savedObj));
                     try {
@@ -526,7 +552,7 @@
                         const pData = await pRes.json();
                         if (pRes.ok && pData.success && pData.student) {
                             currentStudent = normalizeStudentObj(pData.student);
-                            localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
+                            sessionStorage.setItem('activeStudentSessionBible', JSON.stringify(currentStudent));
                         } else {
                             currentStudent = parsed;
                         }
@@ -535,7 +561,8 @@
                     }
                     document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
                     updateGlobalSessionBar();
-                    resetIdleSessionTimer();
+                    checkTabReturnTimeout();
+                    if (!currentStudent) return;
                     goToScreenTopics();
                 } else {
                     updateGlobalSessionBar();
@@ -547,7 +574,7 @@
         }
 
         async function loginAsAdmin() {
-            const user = document.getElementById('adminUser').value;
+            const user = document.getElementById('adminUser').value.trim();
             const pass = document.getElementById('adminPass').value;
             try {
                 const res = await fetch('/api/admin/login', {
@@ -557,10 +584,10 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
+                    clearCredentialInputs();
                     isAdminLoggedIn = true;
                     sessionStorage.setItem('adminSessionBible', 'true');
                     updateGlobalSessionBar();
-                    resetIdleSessionTimer();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                 } else {
@@ -706,6 +733,7 @@
         }
 
         function showScreen(screenId) {
+            clearCredentialInputs();
             ['screenLogin', 'screenAdminLogin', 'screenAdminDashboard', 'screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz']
                 .forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
