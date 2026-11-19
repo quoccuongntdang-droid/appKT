@@ -1,0 +1,15 @@
+{
+  "name": "bible-flashcard-quiz",
+  "version": "1.0.0",
+  "description": "Ứng dụng ôn tập và kiểm tra trí nhớ Kinh Thánh 50 bài",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
