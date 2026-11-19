@@ -6,20 +6,24 @@
     <title>Ôn Tập & Kiểm Tra Trí Nhớ Kinh Thánh</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .container { max-width: 560px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
+        .container { max-width: 780px; width: 100%; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; }
+        h2 { text-align: center; color: #2c3e50; margin: 0 0 12px 0; font-size: 20px; }
+
+        .top-session-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #eef4fa; border: 1px solid #d6e4f0; padding: 8px 12px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; }
+        .btn-logout-global { background: #c0392b; color: white; border: none; padding: 7px 12px; border-radius: 7px; font-weight: bold; cursor: pointer; font-size: 12px; white-space: nowrap; }
+        .btn-logout-global:hover { background: #a93226; }
 
         .auth-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
         .auth-tab { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background: #f8f9fa; cursor: pointer; font-weight: bold; }
         .auth-tab.active { background: #27ae60; color: white; border-color: #27ae60; }
 
-        .login-box { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 6px; }
+        .login-box { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 6px; max-width: 460px; align-self: center; }
         input[type="text"], input[type="password"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
-        .btn-primary { background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-primary { background: #27ae60; color: white; border: none; padding: 11px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .btn-primary:hover { background: #219653; }
-        .btn-danger { background: #e74c3c; color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
-        .btn-warning { background: #e67e22; color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
-        .btn-info { background: #2980b9; color: white; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-warning { background: #e67e22; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-info { background: #2980b9; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
         .admin-link-btn { background: none; border: none; color: #2980b9; cursor: pointer; font-size: 13px; text-decoration: underline; margin-top: 5px; text-align: center; }
 
         .topic-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -37,12 +41,15 @@
 
         .admin-section { border: 1px solid #e0e6ed; border-radius: 10px; padding: 12px; margin-top: 12px; background: #fafbfc; }
         .admin-section h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 14px; }
-        .admin-row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 7px; text-align: left; }
-        .admin-table th { background-color: #f2f2f2; color: #333; }
+        .admin-table-layout { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+        .admin-table-wrap { flex: 1 1 430px; max-height: 300px; overflow: auto; }
+        .admin-side-panel { flex: 0 0 210px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #e5e8eb; padding: 10px; border-radius: 8px; }
+        .row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 6px 7px; text-align: left; vertical-align: middle; }
+        .admin-table th { background-color: #f2f2f2; color: #333; position: sticky; top: 0; }
 
-        .mode-container { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .mode-container { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 520px; align-self: center; }
         .btn-mode, .btn-random-mix, .btn-quiz-1, .btn-quiz-2, .btn-quiz-3 { color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; text-align: left; }
         .btn-mode { background: #3498db; }
         .btn-random-mix { background: #9b59b6; }
@@ -50,11 +57,11 @@
         .btn-quiz-2 { background: #e67e22; }
         .btn-quiz-3 { background: #d35400; }
 
-        .btn-back { background: #95a5a6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; align-self: flex-start; }
-        .controls { margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; background: #fff; }
+        .btn-back { background: #95a5a6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 12px; align-self: flex-start; }
+        .controls { margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 520px; align-self: center; }
+        select { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; background: #fff; }
 
-        .flashcard-container { perspective: 1000px; width: 100%; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
+        .flashcard-container { perspective: 1000px; width: 100%; max-width: 520px; align-self: center; min-height: 285px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; min-height: 285px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; }
         .flashcard.flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; min-height: 285px; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; border-radius: 12px; text-align: center; overflow-y: auto; }
@@ -66,10 +73,10 @@
         .card-text { font-size: 15px; line-height: 1.6; word-break: break-word; width: 100%; max-height: 220px; overflow-y: auto; padding-right: 5px; }
         .hint { font-size: 12px; color: #95a5a6; margin-top: 15px; font-style: italic; }
 
-        .nav-buttons { display: flex; gap: 10px; width: 100%; }
+        .nav-buttons { display: flex; gap: 10px; width: 100%; max-width: 520px; align-self: center; }
         .btn-nav { flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        .quiz-box { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .quiz-box { width: 100%; max-width: 520px; align-self: center; display: flex; flex-direction: column; gap: 15px; }
         .quiz-top-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff8e7; border: 1px solid #f5b041; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; }
         .timer-badge { background: #e67e22; color: white; padding: 4px 10px; border-radius: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .timer-badge.danger { background: #c0392b; }
@@ -88,6 +95,12 @@
 
     <div class="container">
         <h2>📖 Ôn Tập Kinh Thánh</h2>
+
+        <!-- THANH ĐĂNG XUẤT HIỂN THỊ TRÊN TẤT CẢ CÁC MÀN HÌNH KHI ĐÃ ĐĂNG NHẬP -->
+        <div id="globalSessionBar" class="top-session-bar hidden">
+            <span id="globalSessionText">Đang đăng nhập...</span>
+            <button type="button" class="btn-logout-global" onclick="logoutAndReload()">🚪 Đăng xuất</button>
+        </div>
 
         <!-- MÀN HÌNH 0: ĐĂNG KÝ / ĐĂNG NHẬP HỌC VIÊN -->
         <div id="screenLogin" class="">
@@ -116,64 +129,73 @@
 
         <!-- DASHBOARD ADMIN -->
         <div id="screenAdminDashboard" class="hidden">
-            <button class="btn-back" onclick="logoutAdmin()">🚪 Đăng xuất Admin</button>
             <h3 style="color: #2c3e50; text-align: center; margin-top: 0;">📊 Bảng Quản Trị Học Viên & Điểm Số</h3>
 
+            <!-- BẢNG HỌC VIÊN + CÁC NÚT BÊN CẠNH BẢNG & TỪNG DÒNG -->
             <div class="admin-section">
-                <h4>👤 Quản Lý Tài Khoản & Mở/Khóa Bài Học Viên</h4>
-                <select id="adminStudentSelect" onchange="onSelectAdminStudent()"></select>
-                <div id="adminStudentProgressInfo" style="font-size: 12px; color: #555; margin: 8px 0;"></div>
-
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <select id="adminTargetTopicSelect">
-                        <option value="1">Chủ Đề 1</option>
-                        <option value="2">Chủ Đề 2</option>
-                        <option value="3">Chủ Đề 3</option>
-                        <option value="4">Chủ Đề 4</option>
-                        <option value="5">Chủ Đề 5</option>
-                    </select>
-                    <select id="adminTargetLessonsSelect">
-                        <option value="1">Mở 1 bài</option>
-                        <option value="2">Mở 2 bài</option>
-                        <option value="3">Mở 3 bài</option>
-                        <option value="4">Mở 4 bài</option>
-                        <option value="5">Mở 5 bài</option>
-                        <option value="6">Mở 6 bài</option>
-                        <option value="7">Mở 7 bài</option>
-                        <option value="8">Mở 8 bài</option>
-                        <option value="9">Mở 9 bài</option>
-                        <option value="10">Mở đủ 10 bài</option>
-                    </select>
-                </div>
-
-                <div class="admin-row-actions">
-                    <button class="btn-info" onclick="adminApplyCustomProgress()">✅ Áp Dụng Mở/Khóa</button>
-                    <button class="btn-warning" onclick="adminSetProgressAction('unlock_all')">🔓 Mở Toàn Bộ</button>
-                    <button class="btn-warning" onclick="adminSetProgressAction('reset_lock_all')">🔒 Reset Khóa Lại</button>
-                    <button class="btn-danger" onclick="adminDeleteStudent(false)">🗑️ Xóa Tài Khoản</button>
-                    <button class="btn-danger" onclick="adminDeleteStudent(true)">🗑️ Xóa TK + Điểm</button>
+                <h4>👤 Danh Sách Tài Khoản Học Viên</h4>
+                <div class="admin-table-layout">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Tài khoản</th>
+                                    <th>Tiến độ mở bài</th>
+                                    <th>Thao tác từng dòng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStudentsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="admin-side-panel">
+                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Mở/Khóa theo chủ đề</div>
+                        <select id="adminTargetTopicSelect">
+                            <option value="1">Chủ Đề 1</option>
+                            <option value="2">Chủ Đề 2</option>
+                            <option value="3">Chủ Đề 3</option>
+                            <option value="4">Chủ Đề 4</option>
+                            <option value="5">Chủ Đề 5</option>
+                        </select>
+                        <select id="adminTargetLessonsSelect">
+                            <option value="1">Mở 1 bài</option>
+                            <option value="2">Mở 2 bài</option>
+                            <option value="3">Mở 3 bài</option>
+                            <option value="4">Mở 4 bài</option>
+                            <option value="5">Mở 5 bài</option>
+                            <option value="6">Mở 6 bài</option>
+                            <option value="7">Mở 7 bài</option>
+                            <option value="8">Mở 8 bài</option>
+                            <option value="9">Mở 9 bài</option>
+                            <option value="10">Mở đủ 10 bài</option>
+                        </select>
+                        <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="refreshAdminAll()">🔄 Làm mới</button>
+                    </div>
                 </div>
             </div>
 
+            <!-- BẢNG KẾT QUẢ KIỂM TRA + CÁC NÚT BÊN CẠNH BẢNG & TỪNG DÒNG -->
             <div class="admin-section">
                 <h4>📝 Kết Quả Kiểm Tra</h4>
-                <div class="admin-row-actions" style="margin-top: 0; margin-bottom: 8px;">
-                    <button class="btn-primary" style="padding: 8px 12px; font-size: 13px;" onclick="refreshAdminAll()">🔄 Làm Mới Dữ Liệu</button>
-                    <button class="btn-warning" onclick="adminResetResults(true)">🧹 Reset Điểm SV Đang Chọn</button>
-                    <button class="btn-danger" onclick="adminResetResults(false)">💥 Reset Tất Cả Điểm</button>
-                </div>
-                <div style="max-height: 280px; overflow-y: auto;">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Học viên</th>
-                                <th>Bài kiểm tra</th>
-                                <th>Điểm</th>
-                                <th>Thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminResultsTableBody"></tbody>
-                    </table>
+                <div class="admin-table-layout">
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Học viên</th>
+                                    <th>Bài kiểm tra</th>
+                                    <th>Điểm</th>
+                                    <th>Thời gian</th>
+                                    <th>Xóa dòng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminResultsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="admin-side-panel">
+                        <div style="font-size:12px;font-weight:bold;color:#2c3e50;">Thao tác bảng điểm</div>
+                        <button type="button" class="btn-primary" style="font-size:12px;padding:8px;" onclick="loadAdminResults()">🔄 Làm mới điểm</button>
+                        <button type="button" class="btn-danger" onclick="adminResetAllResults()">💥 Reset tất cả điểm</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,7 +210,6 @@
                 Tài khoản: <b id="currentStudentDisplay" style="color: #e67e22;"></b>. Mở hết bài trong chủ đề để mở chủ đề kế tiếp!
             </p>
             <div class="topic-grid" id="topicGrid"></div>
-            <button class="admin-link-btn" style="margin-top: 15px; display: block; width: 100%;" onclick="logoutStudent()">Đăng xuất tài khoản học viên</button>
         </div>
 
         <!-- MÀN HÌNH 2: CHỌN CHẾ ĐỘ TRONG CHỦ ĐỀ -->
@@ -264,7 +285,8 @@
     </div>
 
     <script>
-        const SECONDS_PER_QUESTION = 60; // Thời gian cho phép làm mỗi câu (60 giây = 1 phút/câu)
+        const SECONDS_PER_QUESTION = 60; // Thời gian làm mỗi câu trắc nghiệm (giây)
+        const SESSION_TIMEOUT_MINUTES = 15; // Tự động đăng xuất & reload sau 15 phút không thao tác
 
         let bibleData = [];
         let currentTopicId = 1;
@@ -285,7 +307,8 @@
 
         let authMode = 'login';
         let currentStudent = null;
-        let adminStudentsCache = [];
+        let isAdminLoggedIn = false;
+        let sessionIdleTimer = null;
 
         const topicsConfig = [
             { id: 1, title: "Chủ Đề 1", name: "Bài 1 đến Bài 10", start: 1, end: 10 },
@@ -294,6 +317,52 @@
             { id: 4, title: "Chủ Đề 4", name: "Bài 31 đến Bài 40", start: 31, end: 40 },
             { id: 5, title: "Chủ Đề 5", name: "Bài 41 đến Bài 50", start: 41, end: 50 }
         ];
+
+        function clearAllAuthStorage() {
+            localStorage.removeItem('loggedInStudentObjBible');
+            sessionStorage.removeItem('adminSessionBible');
+            localStorage.removeItem('lastActiveTimeBible');
+        }
+
+        function logoutAndReload(reasonMessage = '') {
+            stopQuestionTimer();
+            currentStudent = null;
+            isAdminLoggedIn = false;
+            clearAllAuthStorage();
+            if (reasonMessage) alert(reasonMessage);
+            location.reload();
+        }
+
+        function resetIdleSessionTimer() {
+            const hasSession = Boolean(currentStudent || isAdminLoggedIn);
+            if (!hasSession) {
+                if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
+                return;
+            }
+            localStorage.setItem('lastActiveTimeBible', String(Date.now()));
+            if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
+            sessionIdleTimer = setTimeout(() => {
+                logoutAndReload(`⏰ Đã quá ${SESSION_TIMEOUT_MINUTES} phút không thao tác. Hệ thống tự động đăng xuất để bảo mật.`);
+            }, SESSION_TIMEOUT_MINUTES * 60 * 1000);
+        }
+
+        ['click', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+            window.addEventListener(evt, resetIdleSessionTimer, { passive: true });
+        });
+
+        function updateGlobalSessionBar() {
+            const bar = document.getElementById('globalSessionBar');
+            const text = document.getElementById('globalSessionText');
+            if (isAdminLoggedIn) {
+                bar.classList.remove('hidden');
+                text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (tự đăng xuất sau ${SESSION_TIMEOUT_MINUTES}p không dùng)`;
+            } else if (currentStudent) {
+                bar.classList.remove('hidden');
+                text.innerHTML = `👤 Học viên: <b>${currentStudent.username}</b> (tự đăng xuất sau ${SESSION_TIMEOUT_MINUTES}p)`;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
 
         function normalizeStudentObj(student) {
             if (!student) return null;
@@ -415,29 +484,39 @@
                     alert(data.message || 'Xác thực thất bại!');
                     return;
                 }
+                isAdminLoggedIn = false;
+                sessionStorage.removeItem('adminSessionBible');
                 currentStudent = normalizeStudentObj(data.student);
                 localStorage.setItem('loggedInStudentObjBible', JSON.stringify(currentStudent));
                 document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
+                updateGlobalSessionBar();
+                resetIdleSessionTimer();
                 goToScreenTopics();
             } catch (e) {
                 alert('Lỗi kết nối tới máy chủ!');
             }
         }
 
-        function logoutStudent() {
-            stopQuestionTimer();
-            currentStudent = null;
-            localStorage.removeItem('loggedInStudentObjBible');
-            document.getElementById('studentPasswordInput').value = '';
-            showScreen('screenLogin');
-        }
-
         async function loadDatabase() {
             try {
+                const lastActive = Number(localStorage.getItem('lastActiveTimeBible') || 0);
+                if (lastActive && (Date.now() - lastActive) > SESSION_TIMEOUT_MINUTES * 60 * 1000) {
+                    clearAllAuthStorage();
+                }
+
                 const response = await fetch('data.json');
                 if (!response.ok) throw new Error('Không thể tải file dữ liệu');
                 bibleData = await response.json();
                 document.getElementById('globalProgress').textContent = `Đã tải ${bibleData.length} bài học thành công!`;
+
+                if (sessionStorage.getItem('adminSessionBible') === 'true') {
+                    isAdminLoggedIn = true;
+                    updateGlobalSessionBar();
+                    resetIdleSessionTimer();
+                    await refreshAdminAll();
+                    showScreen('screenAdminDashboard');
+                    return;
+                }
 
                 const savedObj = localStorage.getItem('loggedInStudentObjBible');
                 if (savedObj) {
@@ -455,8 +534,11 @@
                         currentStudent = parsed;
                     }
                     document.getElementById('currentStudentDisplay').textContent = currentStudent.username;
+                    updateGlobalSessionBar();
+                    resetIdleSessionTimer();
                     goToScreenTopics();
                 } else {
+                    updateGlobalSessionBar();
                     showScreen('screenLogin');
                 }
             } catch (error) {
@@ -475,6 +557,10 @@
                 });
                 const data = await res.json();
                 if (res.ok && data.success) {
+                    isAdminLoggedIn = true;
+                    sessionStorage.setItem('adminSessionBible', 'true');
+                    updateGlobalSessionBar();
+                    resetIdleSessionTimer();
                     await refreshAdminAll();
                     showScreen('screenAdminDashboard');
                 } else {
@@ -485,11 +571,6 @@
             }
         }
 
-        function logoutAdmin() {
-            if (currentStudent) goToScreenTopics();
-            else showScreen('screenLogin');
-        }
-
         async function refreshAdminAll() {
             await Promise.all([loadAdminStudents(), loadAdminResults()]);
         }
@@ -498,50 +579,42 @@
             try {
                 const res = await fetch('/api/admin/students');
                 const users = await res.json();
-                adminStudentsCache = Array.isArray(users) ? users : [];
-                const select = document.getElementById('adminStudentSelect');
-                select.innerHTML = '';
+                const list = Array.isArray(users) ? users : [];
+                const tbody = document.getElementById('adminStudentsTableBody');
+                tbody.innerHTML = '';
 
-                if (!adminStudentsCache.length) {
-                    const opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = '-- Chưa có tài khoản học viên nào --';
-                    select.appendChild(opt);
-                    document.getElementById('adminStudentProgressInfo').textContent = '';
+                if (!list.length) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Chưa có tài khoản học viên nào.</td></tr>`;
                     return;
                 }
 
-                adminStudentsCache.forEach(u => {
-                    const opt = document.createElement('option');
-                    opt.value = u.username;
-                    opt.textContent = `${u.username} (Chủ đề mở: ${u.unlockedTopic}/5)`;
-                    select.appendChild(opt);
+                list.forEach(u => {
+                    const map = u.unlockedByTopic || {};
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><b>${u.username}</b><br><span style="color:#666;font-size:11px;">CĐ mở: ${u.unlockedTopic}/5</span></td>
+                        <td style="font-size:11px;line-height:1.4;">
+                            CĐ1: ${map["1"]||0}/10 • CĐ2: ${map["2"]||0}/10 • CĐ3: ${map["3"]||0}/10<br>
+                            CĐ4: ${map["4"]||0}/10 • CĐ5: ${map["5"]||0}/10
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <button type="button" class="btn-info" onclick="adminRowApplyProgress('${u.username}')">Mở/Khóa</button>
+                                <button type="button" class="btn-warning" onclick="adminRowResetLock('${u.username}')">Khóa lại</button>
+                                <button type="button" class="btn-danger" onclick="adminRowDeleteStudent('${u.username}')">Xóa TK</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
-
-                onSelectAdminStudent();
             } catch (e) {
                 console.error('Lỗi tải danh sách học viên:', e);
             }
         }
 
-        function onSelectAdminStudent() {
-            const uname = document.getElementById('adminStudentSelect').value;
-            const user = adminStudentsCache.find(u => u.username === uname);
-            const infoEl = document.getElementById('adminStudentProgressInfo');
-            if (!user) {
-                infoEl.textContent = '';
-                return;
-            }
-            const map = user.unlockedByTopic || {};
-            infoEl.textContent = `Tiến độ mở bài: CĐ1=${map["1"]||0}/10, CĐ2=${map["2"]||0}/10, CĐ3=${map["3"]||0}/10, CĐ4=${map["4"]||0}/10, CĐ5=${map["5"]||0}/10`;
-        }
-
-        async function adminApplyCustomProgress() {
-            const username = document.getElementById('adminStudentSelect').value;
-            if (!username) return alert('Chưa chọn học viên!');
+        async function adminRowApplyProgress(username) {
             const targetTopic = Number(document.getElementById('adminTargetTopicSelect').value);
             const targetLessons = Number(document.getElementById('adminTargetLessonsSelect').value);
-
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -552,49 +625,51 @@
             await loadAdminStudents();
         }
 
-        async function adminSetProgressAction(actionType) {
-            const username = document.getElementById('adminStudentSelect').value;
-            if (!username) return alert('Chưa chọn học viên!');
+        async function adminRowResetLock(username) {
+            if (!confirm(`Reset khóa lại tiến độ của "${username}" về mặc định (Chủ đề 1 - 1 bài)?`)) return;
             const res = await fetch('/api/admin/set-progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, actionType })
+                body: JSON.stringify({ username, actionType: 'reset_lock_all' })
             });
             const data = await res.json();
-            alert(data.message || 'Đã cập nhật!');
+            alert(data.message || 'Đã reset khóa!');
             await loadAdminStudents();
         }
 
-        async function adminDeleteStudent(deleteResults) {
-            const username = document.getElementById('adminStudentSelect').value;
-            if (!username) return alert('Chưa chọn học viên!');
-            const msg = deleteResults
-                ? `Xóa vĩnh viễn tài khoản "${username}" VÀ toàn bộ điểm thi của tài khoản này?`
-                : `Xóa vĩnh viễn tài khoản "${username}"?`;
-            if (!confirm(msg)) return;
-
+        async function adminRowDeleteStudent(username) {
+            const deleteResults = confirm(`Xóa tài khoản "${username}"? Bấm OK để xóa kèm cả điểm thi của "${username}", hoặc Cancel để chỉ xóa tài khoản.`);
             const res = await fetch('/api/admin/delete-student', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, deleteResults })
             });
             const data = await res.json();
-            alert(data.message || 'Đã xóa!');
+            alert(data.message || 'Đã xóa tài khoản!');
             await refreshAdminAll();
         }
 
-        async function adminResetResults(onlySelectedStudent) {
-            const studentName = onlySelectedStudent ? document.getElementById('adminStudentSelect').value : '';
-            if (onlySelectedStudent && !studentName) return alert('Chưa chọn học viên!');
-            const confirmMsg = onlySelectedStudent
-                ? `Xóa toàn bộ kết quả kiểm tra của học viên "${studentName}"?`
-                : 'Reset (xóa) TOÀN BỘ kết quả kiểm tra của tất cả học viên?';
-            if (!confirm(confirmMsg)) return;
+        async function adminDeleteSingleResult(resultId) {
+            if (!confirm('Xóa dòng kết quả kiểm tra này?')) return;
+            const res = await fetch('/api/admin/delete-result', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: resultId })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.message || 'Không xóa được dòng điểm này.');
+                return;
+            }
+            await loadAdminResults();
+        }
 
+        async function adminResetAllResults() {
+            if (!confirm('Reset (xóa) TOÀN BỘ kết quả kiểm tra của tất cả học viên?')) return;
             const res = await fetch('/api/admin/reset-results', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ studentName })
+                body: JSON.stringify({ studentName: '' })
             });
             const data = await res.json();
             alert(data.message || 'Đã reset kết quả!');
@@ -610,7 +685,7 @@
                 const tbody = document.getElementById('adminResultsTableBody');
                 tbody.innerHTML = '';
                 if (!results.length) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Chưa có kết quả học viên nào gửi về.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Chưa có kết quả học viên nào gửi về.</td></tr>`;
                     return;
                 }
                 results.forEach(r => {
@@ -621,6 +696,7 @@
                         <td>Chủ đề ${r.topicId} (KT ${r.quizType})${r.lessonTitle ? ' - ' + r.lessonTitle : ''}${statusBadge}</td>
                         <td style="color: #27ae60; font-weight: bold;">${r.score} / ${r.total}</td>
                         <td style="font-size: 11px; color: #666;">${r.date}</td>
+                        <td><button type="button" class="btn-danger" onclick="adminDeleteSingleResult('${r._id}')">Xóa</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -633,6 +709,7 @@
             ['screenLogin', 'screenAdminLogin', 'screenAdminDashboard', 'screenTopics', 'screenModes', 'screenQuizSelectLesson', 'screenFlashcard', 'screenQuiz']
                 .forEach(id => document.getElementById(id).classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
+            updateGlobalSessionBar();
         }
 
         function goToScreenTopics() {
@@ -799,7 +876,6 @@
             }
         }
 
-        // Bắt đầu đếm ngược 1 phút (60 giây) cho câu hỏi hiện tại
         function startQuestionTimer() {
             stopQuestionTimer();
             if (quizTimedOut) return;
@@ -933,7 +1009,7 @@
             });
 
             document.getElementById('quizProgressText').textContent = `Điểm: ${quizScore} | Câu ${currentQuizIndex + 1} / ${quizList.length} (${currentQ.lesson})`;
-            startQuestionTimer(); // Mỗi câu mới bắt đầu lại 1 phút (60 giây)
+            startQuestionTimer();
         }
 
         function checkQuizAnswer(selectedBtn, selectedChoice, correctRef) {
@@ -989,6 +1065,7 @@
                 }
                 loadQuizQuestion(poolWrongAnswers);
             } else {
+                stopQuestionTimer();
                 const totalMax = quizList.length * 10;
                 const passed = quizScore >= totalMax / 2;
                 const chosenLessonTitle = (activeQuizType === 1 || activeQuizType === 2)
