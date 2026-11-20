@@ -164,10 +164,17 @@ const spaRoutes = [
     '/flashcard',
     '/quiz',
     '/study-v2',
-    '/admin-v2'
+    '/admin-v2',
+    '/read-v2'
 ];
 
 app.get(spaRoutes, (req, res) => {
+    if (req.path === '/read-v2') {
+        const readV2Path = path.join(__dirname, 'read_v2.html');
+        if (fs.existsSync(readV2Path)) {
+            return res.sendFile(readV2Path);
+        }
+    }
     if (req.path === '/study-v2') {
         const v2Path = path.join(__dirname, 'study_v2.html');
         if (fs.existsSync(v2Path)) {
