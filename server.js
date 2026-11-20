@@ -50,6 +50,7 @@ function requireAdmin(req, res, next) {
 }
 
 // lessonsByTopic: { "1": [0, 1], "2": [], ... } -> mảng chỉ số 0-based các bài đang được mở khóa trong từng chủ đề
+// unlockedSections: { "1-1": ["1-1-sec-1"], ... } -> danh sách sectionId được mở theo từng mã bài (v2)
 const studentUserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true, lowercase: true },
     passwordHash: { type: String, required: true },
@@ -63,6 +64,11 @@ const studentUserSchema = new mongoose.Schema({
         type: Map,
         of: [Number],
         default: () => ({ "1": [0], "2": [], "3": [], "4": [], "5": [] })
+    },
+    unlockedSections: {
+        type: Map,
+        of: [String],
+        default: () => ({ "1-1": ["1-1-sec-1"] })
     }
 }, { timestamps: true });
 
@@ -127,6 +133,25 @@ function normalizeProgress(userDoc) {
     return { unlockedTopic, unlockedByTopic: progress, lessonsByTopic };
 }
 
+function normalizeUnlockedSections(userDoc) {
+    const rawMap = userDoc.unlockedSections instanceof Map
+        ? Object.fromEntries(userDoc.unlockedSections)
+        : (userDoc.unlockedSections || {});
+    const result = {};
+    for (const [lessonCode, secList] of Object.entries(rawMap)) {
+        const key = String(lessonCode || '').trim();
+        if (!key) continue;
+        const clean = Array.isArray(secList)
+            ? [...new Set(secList.map(s => String(s || '').trim()).filter(Boolean))]
+            : [];
+        result[key] = clean;
+    }
+    if (!Array.isArray(result['1-1']) || !result['1-1'].length) {
+        result['1-1'] = ['1-1-sec-1'];
+    }
+    return result;
+}
+
 const spaRoutes = [
     '/',
     '/login',
@@ -138,7 +163,8 @@ const spaRoutes = [
     '/quiz/select-lesson',
     '/flashcard',
     '/quiz',
-    '/study-v2'
+    '/study-v2',
+    '/admin-v2'
 ];
 
 app.get(spaRoutes, (req, res) => {
@@ -146,6 +172,12 @@ app.get(spaRoutes, (req, res) => {
         const v2Path = path.join(__dirname, 'study_v2.html');
         if (fs.existsSync(v2Path)) {
             return res.sendFile(v2Path);
+        }
+    }
+    if (req.path === '/admin-v2') {
+        const adminV2Path = path.join(__dirname, 'admin_v2.html');
+        if (fs.existsSync(adminV2Path)) {
+            return res.sendFile(adminV2Path);
         }
     }
     return res.sendFile(path.join(__dirname, 'index.html'));
@@ -173,6 +205,27 @@ app.get('/api/v2/stage1-lesson1', (req, res) => {
     }
 });
 
+// Học viên v2 đọc danh sách phần đã được Admin mở cho bài học
+app.get('/api/v2/progress/:username/:lessonCode', async (req, res) => {
+    try {
+        const username = String(req.params?.username || '').trim().toLowerCase();
+        const lessonCode = String(req.params?.lessonCode || '1-1').trim();
+        const user = await StudentUser.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản học viên!' });
+        }
+        const map = normalizeUnlockedSections(user);
+        return res.json({
+            success: true,
+            username: user.username,
+            lessonCode,
+            unlockedSectionIds: map[lessonCode] || []
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Lỗi lấy tiến độ phần v2!' });
+    }
+});
+
 app.post('/api/student/register', async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
@@ -195,7 +248,8 @@ app.post('/api/student/register', async (req, res) => {
             passwordHash: hashPassword(password),
             unlockedTopic: 1,
             unlockedByTopic: { "1": 1, "2": 0, "3": 0, "4": 0, "5": 0 },
-            lessonsByTopic: { "1": [0], "2": [], "3": [], "4": [], "5": [] }
+            lessonsByTopic: { "1": [0], "2": [], "3": [], "4": [], "5": [] },
+            unlockedSections: { "1-1": ["1-1-sec-1"] }
         });
         await newUser.save();
 
@@ -595,6 +649,58 @@ app.post('/api/admin/delete-student', requireAdmin, async (req, res) => {
     } catch (err) {
         console.error('Lỗi xóa tài khoản học viên:', err.message);
         return res.status(500).json({ success: false, message: 'Lỗi khi xóa tài khoản học viên!' });
+    }
+});
+
+// Admin v2: Lấy danh sách học viên kèm danh sách phần đã mở theo từng bài
+app.get('/api/admin/v2/students', requireAdmin, async (req, res) => {
+    try {
+        const users = await StudentUser.find().sort({ createdAt: -1 });
+        const list = users.map(u => ({
+            username: u.username,
+            unlockedSections: normalizeUnlockedSections(u),
+            createdAt: u.createdAt
+        }));
+        return res.json({ success: true, students: list });
+    } catch (err) {
+        console.error('Lỗi lấy danh sách học viên v2:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi tải danh sách học viên v2!' });
+    }
+});
+
+// Admin v2: Lưu danh sách các phần (sectionId) được tick mở/khóa cho học viên theo mã bài
+app.post('/api/admin/v2/set-sections', requireAdmin, async (req, res) => {
+    try {
+        const username = String(req.body?.username || '').trim().toLowerCase();
+        const lessonCode = String(req.body?.lessonCode || '1-1').trim();
+        const checkedSectionIds = Array.isArray(req.body?.checkedSectionIds)
+            ? [...new Set(req.body.checkedSectionIds.map(s => String(s || '').trim()).filter(Boolean))]
+            : [];
+
+        if (!username || !lessonCode) {
+            return res.status(400).json({ success: false, message: 'Thiếu tên học viên hoặc mã bài!' });
+        }
+
+        const user = await StudentUser.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy học viên!' });
+        }
+
+        const currentMap = normalizeUnlockedSections(user);
+        currentMap[lessonCode] = checkedSectionIds;
+
+        user.unlockedSections = currentMap;
+        await user.save();
+
+        return res.json({
+            success: true,
+            message: `Đã lưu ${checkedSectionIds.length} phần mở khóa cho "${username}" (Bài ${lessonCode}).`,
+            username: user.username,
+            unlockedSections: normalizeUnlockedSections(user)
+        });
+    } catch (err) {
+        console.error('Lỗi lưu danh sách phần v2:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi lưu danh sách phần mở khóa!' });
     }
 });
 
