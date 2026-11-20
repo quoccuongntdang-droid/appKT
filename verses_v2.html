@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Các Câu Kinh Thánh — Bài 1.1 (V2)</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #eef2f6; margin: 0; padding: 16px; color: #2c3e50; }
+        .wrap { max-width: 780px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 6px 22px rgba(0,0,0,0.08); }
+        .top-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 14px; margin-bottom: 16px; }
+        .btn { border: none; border-radius: 8px; padding: 9px 13px; font-size: 13px; font-weight: bold; cursor: pointer; color: #fff; text-decoration: none; display: inline-block; }
+        .btn-blue { background: #2980b9; }
+        .btn-orange { background: #e67e22; }
+        .btn-gray { background: #7f8c8d; }
+        .sec-group { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px; background: #fafcff; }
+        .sec-head { font-weight: bold; font-size: 15px; margin-bottom: 10px; color: #1e293b; }
+        .verse-card { background: #fef9e7; border: 1px solid #f7dc6f; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+        .verse-ref { font-weight: bold; color: #9a7d0a; font-size: 13px; margin-bottom: 4px; }
+        .verse-text { font-size: 13.5px; line-height: 1.55; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top-bar">
+            <div>
+                <h2 style="margin:0;font-size:20px;">📜 Câu Kinh Thánh — Bài 1.1</h2>
+                <div style="font-size:12px;color:#64748b;margin-top:3px;" id="subTitle">Đang tải...</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="/read-v2" class="btn btn-blue">📖 Đọc Toàn Bộ</a>
+                <a href="/summary-v2" class="btn btn-orange">📌 Dẫn Giải Tóm Lược</a>
+                <a href="/topics" class="btn btn-gray">⬅️ Trang Chính</a>
+            </div>
+        </div>
+        <div id="versesContainer"></div>
+    </div>
+
+    <script>
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        async function loadVerses() {
+            const res = await fetch('/api/v2/stage1-lesson1');
+            const json = await res.json();
+            if (!res.ok || !json.success) return;
+            document.getElementById('subTitle').textContent = `${json.content.stageName} • Bài ${json.content.lessonCode}: ${json.content.lessonTitle}`;
+            const container = document.getElementById('versesContainer');
+            container.innerHTML = '';
+
+            (json.content.sections || []).forEach(sec => {
+                const verses = [];
+                (sec.points || []).forEach(pt => {
+                    (pt.verses || []).forEach(v => verses.push(v));
+                });
+
+                let itemsHtml = verses.length
+                    ? verses.map(v => `
+                        <div class="verse-card">
+                            <div class="verse-ref">📖 ${escapeHtml(v.ref)}</div>
+                            <div class="verse-text">${escapeHtml(v.text || '')}</div>
+                        </div>
+                    `).join('')
+                    : `<div style="font-size:13px;color:#64748b;">Phần này không có câu Kinh Thánh trực tiếp.</div>`;
+
+                container.innerHTML += `
+                    <div class="sec-group">
+                        <div class="sec-head">${escapeHtml(sec.sectionTitle)}</div>
+                        ${itemsHtml}
+                    </div>
+                `;
+            });
+        }
+        window.onload = loadVerses;
+    </script>
+</body>
+</html>
