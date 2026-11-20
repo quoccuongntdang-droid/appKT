@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const app = express();
 
@@ -136,11 +137,40 @@ const spaRoutes = [
     '/modes',
     '/quiz/select-lesson',
     '/flashcard',
-    '/quiz'
+    '/quiz',
+    '/study-v2'
 ];
 
 app.get(spaRoutes, (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    if (req.path === '/study-v2') {
+        const v2Path = path.join(__dirname, 'study_v2.html');
+        if (fs.existsSync(v2Path)) {
+            return res.sendFile(v2Path);
+        }
+    }
+    return res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Endpoint đọc dữ liệu tách riêng cho Bài 1.1 (v2)
+app.get('/api/v2/stage1-lesson1', (req, res) => {
+    try {
+        const contentPath = path.join(__dirname, 'stage1_lesson1_content.json');
+        const quizPath = path.join(__dirname, 'stage1_lesson1_quiz.json');
+
+        if (!fs.existsSync(contentPath) || !fs.existsSync(quizPath)) {
+            return res.status(404).json({
+                success: false,
+                message: 'Thiếu file stage1_lesson1_content.json hoặc stage1_lesson1_quiz.json'
+            });
+        }
+
+        const content = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
+        const quiz = JSON.parse(fs.readFileSync(quizPath, 'utf8'));
+        return res.json({ success: true, content, quiz });
+    } catch (err) {
+        console.error('Lỗi đọc dữ liệu v2:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi đọc file JSON Bài 1.1!' });
+    }
 });
 
 app.post('/api/student/register', async (req, res) => {
