@@ -5,11 +5,106 @@ const fs = require('fs');
 const crypto = require('crypto');
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(__dirname));
 
 const DEFAULT_MONGO_URI = "mongodb+srv://quoccuongdn96vn_db_user:Cuong123@cluster0.rjqeg1h.mongodb.net/bible_lms?retryWrites=true&w=majority";
 const MONGO_URI = process.env.MONGO_URI || DEFAULT_MONGO_URI;
+
+const DIAGRAM_DIR = path.join(__dirname, 'diagram');
+const DIAGRAM_JSON_PATH = path.join(__dirname, 'diagram_v2.json');
+
+function ensureDiagramStorage() {
+    if (!fs.existsSync(DIAGRAM_DIR)) {
+        fs.mkdirSync(DIAGRAM_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(DIAGRAM_JSON_PATH)) {
+        fs.writeFileSync(DIAGRAM_JSON_PATH, '{}\n', 'utf8');
+    }
+}
+
+function readDiagramMap() {
+    ensureDiagramStorage();
+    try {
+        const raw = fs.readFileSync(DIAGRAM_JSON_PATH, 'utf8').trim();
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+function writeDiagramMap(mapObj) {
+    ensureDiagramStorage();
+    fs.writeFileSync(DIAGRAM_JSON_PATH, JSON.stringify(mapObj, null, 2), 'utf8');
+}
+
+function buildDiagramKey(topicId, lessonCode) {
+    const t = Number(topicId || 1);
+    const code = String(lessonCode || '1-1').trim();
+    return `${t}:${code}`;
+}
+
+function getSafeImageExt(mimeOrName) {
+    const s = String(mimeOrName || '').toLowerCase();
+    if (s.includes('png')) return '.png';
+    if (s.includes('webp')) return '.webp';
+    if (s.includes('gif')) return '.gif';
+    if (s.includes('jpeg') || s.includes('jpg')) return '.jpg';
+    return '.png';
+}
+
+async function upsertFileToGitHub({ repoPath, base64Content, commitMessage }) {
+    const token = String(process.env.GITHUB_TOKEN || '').trim();
+    const repo = String(process.env.GITHUB_REPO || '').trim();
+    const branch = String(process.env.GITHUB_BRANCH || 'main').trim() || 'main';
+
+    if (!token || !repo) {
+        return { synced: false, reason: 'Chưa cấu hình GITHUB_TOKEN hoặc GITHUB_REPO' };
+    }
+
+    const encodedPath = repoPath
+        .split('/')
+        .map(part => encodeURIComponent(part))
+        .join('/');
+
+    const apiBase = `https://api.github.com/repos/${repo}/contents/${encodedPath}`;
+    const headers = {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'bible-lms-v2-sync'
+    };
+
+    let existingSha = undefined;
+    const getRes = await fetch(`${apiBase}?ref=${encodeURIComponent(branch)}`, { headers });
+    if (getRes.ok) {
+        const getJson = await getRes.json();
+        if (getJson && getJson.sha) {
+            existingSha = getJson.sha;
+        }
+    }
+
+    const putRes = await fetch(apiBase, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+            message: commitMessage,
+            content: base64Content,
+            branch,
+            ...(existingSha ? { sha: existingSha } : {})
+        })
+    });
+
+    if (!putRes.ok) {
+        const errText = await putRes.text();
+        throw new Error(`GitHub API ${putRes.status}: ${errText}`);
+    }
+
+    return { synced: true };
+}
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ Đã kết nối MongoDB thành công (DB: bible_lms)!'))
@@ -19,9 +114,8 @@ function hashPassword(password) {
     return crypto.createHash('sha256').update(String(password)).digest('hex');
 }
 
-// Quản lý token phiên Admin trên bộ nhớ máy chủ
 const ADMIN_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
-const adminSessions = new Map(); // token -> expiresAt
+const adminSessions = new Map();
 
 function issueAdminToken() {
     const token = crypto.randomBytes(32).toString('hex');
@@ -49,8 +143,6 @@ function requireAdmin(req, res, next) {
     return next();
 }
 
-// lessonsByTopic: { "1": [0, 1], "2": [], ... } -> mảng chỉ số 0-based các bài đang được mở khóa trong từng chủ đề
-// unlockedSections: { "1-1": ["1-1-sec-1"], ... } -> danh sách sectionId được mở theo từng mã bài (v2)
 const studentUserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true, lowercase: true },
     passwordHash: { type: String, required: true },
@@ -165,7 +257,9 @@ const spaRoutes = [
     '/quiz',
     '/study-v2',
     '/admin-v2',
-    '/read-v2'
+    '/read-v2',
+    '/summary-v2',
+    '/verses-v2'
 ];
 
 app.get(spaRoutes, (req, res) => {
@@ -173,6 +267,18 @@ app.get(spaRoutes, (req, res) => {
         const readV2Path = path.join(__dirname, 'read_v2.html');
         if (fs.existsSync(readV2Path)) {
             return res.sendFile(readV2Path);
+        }
+    }
+    if (req.path === '/summary-v2') {
+        const sumV2Path = path.join(__dirname, 'summary_v2.html');
+        if (fs.existsSync(sumV2Path)) {
+            return res.sendFile(sumV2Path);
+        }
+    }
+    if (req.path === '/verses-v2') {
+        const verV2Path = path.join(__dirname, 'verses_v2.html');
+        if (fs.existsSync(verV2Path)) {
+            return res.sendFile(verV2Path);
         }
     }
     if (req.path === '/study-v2') {
@@ -190,7 +296,6 @@ app.get(spaRoutes, (req, res) => {
     return res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Endpoint đọc dữ liệu tách riêng cho Bài 1.1 (v2)
 app.get('/api/v2/stage1-lesson1', (req, res) => {
     try {
         const contentPath = path.join(__dirname, 'stage1_lesson1_content.json');
@@ -212,7 +317,155 @@ app.get('/api/v2/stage1-lesson1', (req, res) => {
     }
 });
 
-// Học viên v2 đọc danh sách phần đã được Admin mở cho bài học
+app.get('/api/v2/diagram', (req, res) => {
+    try {
+        const topicId = Number(req.query?.topic || 1);
+        const lessonCode = String(req.query?.lesson || '1-1').trim();
+        const key = buildDiagramKey(topicId, lessonCode);
+        const map = readDiagramMap();
+        const entry = map[key] || map[lessonCode] || null;
+
+        return res.json({
+            success: true,
+            key,
+            topicId,
+            lessonCode,
+            diagram: entry || {
+                key,
+                topicId,
+                lessonCode,
+                imageUrl: '',
+                caption: ''
+            }
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Lỗi đọc dữ liệu sơ đồ!' });
+    }
+});
+
+app.get('/api/v2/diagram/:lessonCode', (req, res) => {
+    try {
+        const lessonCode = String(req.params?.lessonCode || '1-1').trim();
+        const topicId = Number(req.query?.topic || lessonCode.split('-')[0] || 1);
+        const key = buildDiagramKey(topicId, lessonCode);
+        const map = readDiagramMap();
+        const entry = map[key] || map[lessonCode] || null;
+
+        return res.json({
+            success: true,
+            key,
+            topicId,
+            lessonCode,
+            diagram: entry || {
+                key,
+                topicId,
+                lessonCode,
+                imageUrl: '',
+                caption: ''
+            }
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Lỗi đọc cấu hình sơ đồ!' });
+    }
+});
+
+app.post('/api/admin/v2/upload-diagram', requireAdmin, async (req, res) => {
+    try {
+        const topicId = Number(req.body?.topicId || 1);
+        const lessonCode = String(req.body?.lessonCode || '1-1').trim();
+        const caption = String(req.body?.caption || '').trim();
+        const imageDataUrl = String(req.body?.imageDataUrl || '').trim();
+        const fileNameHint = String(req.body?.fileName || '').trim();
+
+        if (!topicId || !lessonCode) {
+            return res.status(400).json({ success: false, message: 'Thiếu thông tin chủ đề hoặc bài học!' });
+        }
+
+        ensureDiagramStorage();
+        const map = readDiagramMap();
+        const key = buildDiagramKey(topicId, lessonCode);
+        const prevEntry = map[key] || {};
+        let finalImageUrl = String(prevEntry.imageUrl || '').trim();
+
+        let uploadedFileName = '';
+        let imageBuffer = null;
+
+        if (imageDataUrl) {
+            const match = imageDataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+            if (!match) {
+                return res.status(400).json({ success: false, message: 'Định dạng ảnh upload không hợp lệ!' });
+            }
+            const mimeType = match[1];
+            const base64Body = match[2];
+            const ext = getSafeImageExt(fileNameHint || mimeType);
+            const cleanCode = lessonCode.replace(/[^a-zA-Z0-9_-]/g, '-');
+            uploadedFileName = `topic${topicId}_lesson${cleanCode}${ext}`;
+            const fullFilePath = path.join(DIAGRAM_DIR, uploadedFileName);
+
+            imageBuffer = Buffer.from(base64Body, 'base64');
+            fs.writeFileSync(fullFilePath, imageBuffer);
+            finalImageUrl = `/diagram/${uploadedFileName}?v=${Date.now()}`;
+        }
+
+        const updatedItem = {
+            key,
+            topicId,
+            lessonCode,
+            imageUrl: finalImageUrl,
+            caption,
+            updatedAt: new Date().toISOString()
+        };
+
+        map[key] = updatedItem;
+        const jsonString = JSON.stringify(map, null, 2);
+        writeDiagramMap(map);
+
+        let githubStatusText = ' (chỉ lưu local/Render tạm vì chưa cấu hình GitHub)';
+        try {
+            if (imageBuffer && uploadedFileName) {
+                const imgSync = await upsertFileToGitHub({
+                    repoPath: `diagram/${uploadedFileName}`,
+                    base64Content: imageBuffer.toString('base64'),
+                    commitMessage: `Update diagram image for topic ${topicId} lesson ${lessonCode}`
+                });
+                if (imgSync.synced) {
+                    const jsonSync = await upsertFileToGitHub({
+                        repoPath: 'diagram_v2.json',
+                        base64Content: Buffer.from(jsonString, 'utf8').toString('base64'),
+                        commitMessage: `Update diagram_v2.json for topic ${topicId} lesson ${lessonCode}`
+                    });
+                    githubStatusText = jsonSync.synced
+                        ? ' & đã đẩy đồng bộ lên GitHub!'
+                        : ` (${jsonSync.reason})`;
+                } else {
+                    githubStatusText = ` (${imgSync.reason})`;
+                }
+            } else {
+                const jsonSync = await upsertFileToGitHub({
+                    repoPath: 'diagram_v2.json',
+                    base64Content: Buffer.from(jsonString, 'utf8').toString('base64'),
+                    commitMessage: `Update diagram caption for topic ${topicId} lesson ${lessonCode}`
+                });
+                githubStatusText = jsonSync.synced
+                    ? ' & đã cập nhật caption lên GitHub!'
+                    : ` (${jsonSync.reason})`;
+            }
+        } catch (ghErr) {
+            console.error('Lỗi đồng bộ GitHub:', ghErr.message);
+            githubStatusText = ` (lưu local OK, nhưng đồng bộ GitHub lỗi: ${ghErr.message})`;
+        }
+
+        return res.json({
+            success: true,
+            message: `Đã lưu sơ đồ cho Chủ đề ${topicId} — Bài ${lessonCode}${githubStatusText}`,
+            diagram: updatedItem
+        });
+    } catch (err) {
+        console.error('Lỗi upload sơ đồ V2:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi lưu ảnh sơ đồ lên máy chủ!' });
+    }
+});
+
 app.get('/api/v2/progress/:username/:lessonCode', async (req, res) => {
     try {
         const username = String(req.params?.username || '').trim().toLowerCase();
@@ -372,7 +625,6 @@ app.post('/api/student/progress', async (req, res) => {
     }
 });
 
-// Admin đăng nhập & cấp token phiên
 app.post('/api/admin/login', (req, res) => {
     const { username, password } = req.body || {};
     const ADMIN_USER = process.env.ADMIN_USER || "admin";
@@ -390,12 +642,10 @@ app.post('/api/admin/login', (req, res) => {
     return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị!' });
 });
 
-// Kiểm tra token Admin còn hợp lệ không
 app.get('/api/admin/verify', requireAdmin, (req, res) => {
     return res.json({ success: true, valid: true });
 });
 
-// Admin đăng xuất & thu hồi token
 app.post('/api/admin/logout', (req, res) => {
     const authHeader = String(req.headers?.authorization || '');
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
@@ -438,7 +688,6 @@ app.post('/api/submit-quiz', async (req, res) => {
     }
 });
 
-// Các route Admin dưới đây đều yêu cầu token hợp lệ qua requireAdmin
 app.get('/api/admin/results', requireAdmin, async (req, res) => {
     try {
         const results = await BibleQuizResult.find().sort({ createdAt: -1 }).limit(200);
@@ -659,7 +908,6 @@ app.post('/api/admin/delete-student', requireAdmin, async (req, res) => {
     }
 });
 
-// Admin v2: Lấy danh sách học viên kèm danh sách phần đã mở theo từng bài
 app.get('/api/admin/v2/students', requireAdmin, async (req, res) => {
     try {
         const users = await StudentUser.find().sort({ createdAt: -1 });
@@ -675,7 +923,6 @@ app.get('/api/admin/v2/students', requireAdmin, async (req, res) => {
     }
 });
 
-// Admin v2: Lưu danh sách các phần (sectionId) được tick mở/khóa cho học viên theo mã bài
 app.post('/api/admin/v2/set-sections', requireAdmin, async (req, res) => {
     try {
         const username = String(req.body?.username || '').trim().toLowerCase();
