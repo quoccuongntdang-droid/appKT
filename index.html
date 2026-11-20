@@ -43,6 +43,31 @@
             font-size: 21px;
         }
 
+        .v2-nav-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+
+        .btn-v2-inline {
+            flex: 1 1 auto;
+            text-decoration: none;
+            background: #1d4ed8;
+            color: #fff;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12.5px;
+            text-align: center;
+        }
+        .btn-v2-inline:hover { background: #1e40af; }
+        .btn-v2-inline.orange { background: #d97706; }
+        .btn-v2-inline.orange:hover { background: #b45309; }
+        .btn-v2-inline.dark { background: #7c2d12; }
+        .btn-v2-inline.dark:hover { background: #5c200b; }
+
         .top-session-bar {
             display: flex;
             justify-content: space-between;
@@ -277,6 +302,10 @@
         <div id="screenAdminDashboard" class="hidden">
             <h3 style="color: #2c3e50; text-align: center; margin-top: 0;">📊 Bảng Quản Trị Học Viên & Điểm Số</h3>
 
+            <div id="adminV2Buttons" class="v2-nav-box hidden">
+                <a href="/admin-v2" class="btn-v2-inline dark">🛡️ Mở Trang Quản Lý Theo Từng Phần (Admin V2)</a>
+            </div>
+
             <div class="admin-section">
                 <h4>👤 Danh Sách Tài Khoản Học Viên</h4>
                 <div class="admin-table-layout">
@@ -354,6 +383,10 @@
 
         <!-- MÀN HÌNH 1: CHỌN CHỦ ĐỀ -->
         <div id="screenTopics" class="hidden">
+            <div id="studentV2Buttons" class="v2-nav-box hidden">
+                <a href="/read-v2" class="btn-v2-inline">📖 Đọc Toàn Bộ Bài 1.1</a>
+                <a href="/study-v2" class="btn-v2-inline orange">📝 Học & Kiểm Tra Từng Phần</a>
+            </div>
             <div class="unlock-toggle-bar">
                 <span id="unlockModeStatus" style="font-size: 12px; font-weight: bold; color: #2c3e50;">Chế độ: Tuần tự từng bài</span>
                 <button type="button" class="btn-toggle-unlock" onclick="toggleForceUnlock()">🔄 Đổi chế độ</button>
@@ -738,6 +771,9 @@
         function updateGlobalSessionBar() {
             const bar = document.getElementById('globalSessionBar');
             const text = document.getElementById('globalSessionText');
+            const stuV2Box = document.getElementById('studentV2Buttons');
+            const admV2Box = document.getElementById('adminV2Buttons');
+
             if (isAdminLoggedIn) {
                 bar.classList.remove('hidden');
                 text.innerHTML = `🛡️ Quản trị: <b>Admin</b> (token bảo mật • đồng bộ đa tab • rời tab > ${AWAY_LOGOUT_SECONDS}s tự đăng xuất)`;
@@ -747,6 +783,9 @@
             } else {
                 bar.classList.add('hidden');
             }
+
+            if (stuV2Box) stuV2Box.classList.toggle('hidden', !currentStudent);
+            if (admV2Box) admV2Box.classList.toggle('hidden', !isAdminLoggedIn);
         }
 
         function normalizeStudentObj(student) {
