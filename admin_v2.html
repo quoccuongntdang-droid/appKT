@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin V2 - Quản Lý Mở / Khóa Từng Phần</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f6;
+            margin: 0;
+            padding: 16px;
+            color: #2c3e50;
+        }
+        .wrap {
+            max-width: 920px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+        }
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+        }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+        }
+        .btn-green { background: #27ae60; }
+        .btn-green:hover { background: #219653; }
+        .btn-blue { background: #2980b9; }
+        .btn-blue:hover { background: #2471a3; }
+        .btn-orange { background: #e67e22; }
+        .btn-orange:hover { background: #ca6f1e; }
+        .btn-gray { background: #7f8c8d; }
+        .btn-gray:hover { background: #6c7a7b; }
+        .btn-red { background: #c0392b; }
+        .btn-red:hover { background: #a93226; }
+
+        .layout {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .col-table {
+            flex: 1 1 auto;
+            min-width: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: auto;
+            max-height: 420px;
+        }
+        .col-panel {
+            flex: 0 0 340px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            background: #fafcff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: #f3f4f6;
+            position: sticky;
+            top: 0;
+        }
+        label.field-label {
+            font-size: 12px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+        select, input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fff;
+        }
+        .sec-checklist {
+            max-height: 230px;
+            overflow-y: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .sec-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12.5px;
+            line-height: 1.35;
+            cursor: pointer;
+        }
+        .row-2 {
+            display: flex;
+            gap: 8px;
+        }
+        .row-2 .btn {
+            flex: 1;
+        }
+        .login-card {
+            max-width: 400px;
+            margin: 24px auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            background: #fafcff;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .hidden { display: none !important; }
+
+        @media (max-width: 760px) {
+            .layout { flex-direction: column; }
+            .col-panel { flex: 1 1 auto; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top-bar">
+            <div>
+                <h2 style="margin:0;font-size:20px;">🛡️ Admin V2 — Mở / Khóa Từng Phần Bài Học</h2>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;">Tách riêng cho cấu trúc phân tầng mới • Không ảnh hưởng trang cũ</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="/study-v2" style="text-decoration:none;"><button type="button" class="btn btn-blue">📖 Mở trang test Bài 1.1</button></a>
+                <a href="/admin/dashboard" style="text-decoration:none;"><button type="button" class="btn btn-gray">⬅️ Admin cũ</button></a>
+            </div>
+        </div>
+
+        <!-- Form đăng nhập Admin nếu chưa có token hợp lệ -->
+        <form id="adminV2LoginBox" class="login-card hidden" onsubmit="event.preventDefault(); loginAdminV2();">
+            <h3 style="margin:0;text-align:center;color:#c0392b;">Đăng Nhập Quản Trị (Admin V2)</h3>
+            <div>
+                <label class="field-label">Tài khoản quản trị</label>
+                <input type="text" id="admV2User" autocomplete="off" placeholder="admin">
+            </div>
+            <div>
+                <label class="field-label">Mật khẩu</label>
+                <input type="password" id="admV2Pass" autocomplete="new-password" placeholder="••••••">
+            </div>
+            <button type="submit" class="btn btn-red">Đăng nhập Admin</button>
+        </form>
+
+        <!-- Bảng quản lý mở/khóa theo từng phần -->
+        <div id="adminV2Main" class="hidden">
+            <div class="layout">
+                <div class="col-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Học viên</th>
+                                <th>Các phần đã mở (Bài 1-1)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="v2StudentsTbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="col-panel">
+                    <div>
+                        <label class="field-label">Chọn học viên</label>
+                        <select id="v2StudentSelect" onchange="renderSectionCheckboxesForSelected()"></select>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Bài học</label>
+                        <select id="v2LessonSelect" onchange="renderSectionCheckboxesForSelected()"></select>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Tick các phần được phép học / kiểm tra</label>
+                        <div class="sec-checklist" id="v2SectionChecklist"></div>
+                    </div>
+
+                    <div class="row-2">
+                        <button type="button" class="btn btn-blue" onclick="setAllSectionChecks(true)">Tick hết phần</button>
+                        <button type="button" class="btn btn-orange" onclick="setAllSectionChecks(false)">Bỏ tick hết</button>
+                    </div>
+
+                    <button type="button" class="btn btn-green" onclick="saveSectionPermissions()">💾 Lưu trạng thái từng phần</button>
+                    <button type="button" class="btn btn-gray" onclick="loadAllV2()">🔄 Làm mới danh sách</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN_KEY = 'bible_admin_token_v1';
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('bible_lms_sync_v1') : null;
+
+        let adminToken = localStorage.getItem(TOKEN_KEY) || '';
+        let lessonContent = null;
+        let studentsCache = [];
+
+        function getAuthHeaders(extra = {}) {
+            return {
+                ...extra,
+                ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {})
+            };
+        }
+
+        function showLoginBox() {
+            document.getElementById('adminV2Main').classList.add('hidden');
+            document.getElementById('adminV2LoginBox').classList.remove('hidden');
+        }
+
+        function showMainBox() {
+            document.getElementById('adminV2LoginBox').classList.add('hidden');
+            document.getElementById('adminV2Main').classList.remove('hidden');
+        }
+
+        async function loginAdminV2() {
+            const username = document.getElementById('admV2User').value.trim();
+            const password = document.getElementById('admV2Pass').value;
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success || !data.token) {
+                return alert(data.message || 'Đăng nhập Admin thất bại!');
+            }
+            adminToken = data.token;
+            localStorage.setItem(TOKEN_KEY, adminToken);
+            document.getElementById('admV2User').value = '';
+            document.getElementById('admV2Pass').value = '';
+            await loadAllV2();
+        }
+
+        async function loadAllV2() {
+            try {
+                const v2Res = await fetch('/api/v2/stage1-lesson1');
+                const v2Json = await v2Res.json();
+                if (v2Res.ok && v2Json.success) {
+                    lessonContent = v2Json.content;
+                }
+
+                const stuRes = await fetch('/api/admin/v2/students', { headers: getAuthHeaders() });
+                if (stuRes.status === 401) {
+                    localStorage.removeItem(TOKEN_KEY);
+                    adminToken = '';
+                    showLoginBox();
+                    return;
+                }
+                const stuData = await stuRes.json();
+                studentsCache = Array.isArray(stuData.students) ? stuData.students : [];
+
+                showMainBox();
+                populateLessonDropdown();
+                renderStudentsTable();
+                populateStudentDropdown();
+                renderSectionCheckboxesForSelected();
+            } catch (err) {
+                alert('Lỗi tải dữ liệu Admin V2: ' + err.message);
+            }
+        }
+
+        function populateLessonDropdown() {
+            const sel = document.getElementById('v2LessonSelect');
+            sel.innerHTML = '';
+            if (!lessonContent) return;
+            const opt = document.createElement('option');
+            opt.value = lessonContent.lessonCode;
+            opt.textContent = `Bài ${lessonContent.lessonCode} — ${lessonContent.lessonTitle}`;
+            sel.appendChild(opt);
+        }
+
+        function populateStudentDropdown() {
+            const sel = document.getElementById('v2StudentSelect');
+            const prev = sel.value;
+            sel.innerHTML = '';
+            studentsCache.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.username;
+                opt.textContent = u.username;
+                sel.appendChild(opt);
+            });
+            if (prev && studentsCache.some(u => u.username === prev)) {
+                sel.value = prev;
+            } else if (studentsCache.length) {
+                sel.value = studentsCache[0].username;
+            }
+        }
+
+        function renderStudentsTable() {
+            const tbody = document.getElementById('v2StudentsTbody');
+            tbody.innerHTML = '';
+            const lessonCode = lessonContent?.lessonCode || '1-1';
+            const sections = lessonContent?.sections || [];
+
+            if (!studentsCache.length) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Chưa có học viên nào.</td></tr>`;
+                return;
+            }
+
+            studentsCache.forEach(u => {
+                const openIds = u.unlockedSections?.[lessonCode] || [];
+                const labels = sections
+                    .filter(s => openIds.includes(s.sectionId))
+                    .map(s => `Phần ${s.sectionOrder}`);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${escapeHtml(u.username)}</b></td>
+                    <td>${labels.length ? escapeHtml(labels.join(', ')) : '<i>Chưa mở phần nào</i>'} (${openIds.length}/${sections.length})</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderSectionCheckboxesForSelected() {
+            const box = document.getElementById('v2SectionChecklist');
+            box.innerHTML = '';
+            const username = document.getElementById('v2StudentSelect').value;
+            const lessonCode = document.getElementById('v2LessonSelect').value || '1-1';
+            const user = studentsCache.find(u => u.username === username);
+            const openSet = new Set(user?.unlockedSections?.[lessonCode] || []);
+
+            (lessonContent?.sections || []).forEach(sec => {
+                const lbl = document.createElement('label');
+                lbl.className = 'sec-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'v2-sec-cb';
+                cb.value = sec.sectionId;
+                cb.checked = openSet.has(sec.sectionId);
+
+                const span = document.createElement('span');
+                span.textContent = `Phần ${sec.sectionOrder}: ${sec.sectionTitle}`;
+
+                lbl.appendChild(cb);
+                lbl.appendChild(span);
+                box.appendChild(lbl);
+            });
+        }
+
+        function setAllSectionChecks(checked) {
+            document.querySelectorAll('.v2-sec-cb').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        async function saveSectionPermissions() {
+            const username = document.getElementById('v2StudentSelect').value;
+            const lessonCode = document.getElementById('v2LessonSelect').value || '1-1';
+            if (!username) return alert('Vui lòng chọn học viên!');
+
+            const checkedSectionIds = Array.from(document.querySelectorAll('.v2-sec-cb'))
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            const res = await fetch('/api/admin/v2/set-sections', {
+                method: 'POST',
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ username, lessonCode, checkedSectionIds })
+            });
+            if (res.status === 401) {
+                showLoginBox();
+                return alert('Phiên Admin đã hết hạn, vui lòng đăng nhập lại.');
+            }
+            const data = await res.json();
+            alert(data.message || 'Đã lưu trạng thái từng phần!');
+            await loadAllV2();
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'v2_sections_updated', username, lessonCode, ts: Date.now() });
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        window.onload = loadAllV2;
+    </script>
+</body>
+</html>
