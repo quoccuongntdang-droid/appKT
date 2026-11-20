@@ -50,13 +50,56 @@
             color: #fff;
             text-decoration: none;
             display: inline-block;
+            text-align: center;
         }
         .btn-blue { background: #2980b9; }
         .btn-blue:hover { background: #2471a3; }
+        .btn-teal { background: #0f766e; }
+        .btn-teal:hover { background: #115e59; }
+        .btn-purple { background: #6d28d9; }
+        .btn-purple:hover { background: #5b21b6; }
         .btn-orange { background: #e67e22; }
         .btn-orange:hover { background: #ca6f1e; }
         .btn-gray { background: #7f8c8d; }
         .btn-gray:hover { background: #6c7a7b; }
+
+        .diagram-box {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .diagram-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .diagram-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            margin: 0 auto;
+        }
+        .diagram-caption {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #475569;
+            font-style: italic;
+        }
+        .diagram-empty {
+            padding: 14px;
+            border: 1px dashed #94a3b8;
+            border-radius: 8px;
+            color: #64748b;
+            font-size: 13px;
+            background: #fff;
+        }
 
         .toc-bar {
             display: flex;
@@ -147,6 +190,12 @@
             color: #991b1b;
         }
         .hidden { display: none !important; }
+
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .wrap { padding: 16px 14px; border-radius: 12px; }
+            .top-bar .btn { flex: 1 1 auto; }
+        }
     </style>
 </head>
 <body>
@@ -158,6 +207,8 @@
                 <div style="font-size:12px;color:#64748b;margin-top:3px;" id="studentInfoLine"></div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="/summary-v2" class="btn btn-teal">📌 Dẫn Giải Tóm Lược</a>
+                <a href="/verses-v2" class="btn btn-purple">📜 Câu Kinh Thánh</a>
                 <a href="/study-v2" class="btn btn-orange">📝 Học & Kiểm Tra Từng Phần</a>
                 <a href="/topics" class="btn btn-gray">⬅️ Về trang chính</a>
             </div>
@@ -170,6 +221,13 @@
         </div>
 
         <div id="readerContent" class="hidden">
+            <div class="diagram-box" id="diagramBox">
+                <div class="diagram-title">🗺️ Sơ Đồ Minh Họa — Bài 1.1</div>
+                <div id="diagramBody">
+                    <div class="diagram-empty">Đang tải thông tin sơ đồ...</div>
+                </div>
+            </div>
+
             <div class="toc-bar" id="tocBar"></div>
             <div id="sectionsContainer"></div>
         </div>
@@ -177,6 +235,7 @@
 
     <script>
         const STUDENT_STORAGE_KEY = 'bible_persistent_student_v1';
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('bible_lms_sync_v1') : null;
 
         function getLoggedInStudent() {
             try {
@@ -195,6 +254,54 @@
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
+        }
+
+        function escapeAttr(str) {
+            return String(str ?? '').replace(/"/g, '&quot;');
+        }
+
+        function renderDiagram(diagram) {
+            const bodyEl = document.getElementById('diagramBody');
+            const imageUrl = String(diagram?.imageUrl || '').trim();
+            const caption = String(diagram?.caption || '').trim();
+
+            if (!imageUrl) {
+                bodyEl.innerHTML = `
+                    <div class="diagram-empty">
+                        Chưa có ảnh sơ đồ cho Chủ đề 1 — Bài 1.1${caption ? ` (${escapeHtml(caption)})` : ''}.
+                        Hãy tải ảnh lên trong trang <b>Admin V2</b> để đồng bộ tự động.
+                    </div>
+                `;
+                return;
+            }
+
+            bodyEl.innerHTML = `
+                <img class="diagram-img" src="${escapeAttr(imageUrl)}" alt="${escapeAttr(caption || 'Sơ đồ Bài 1.1')}">
+                ${caption ? `<div class="diagram-caption">${escapeHtml(caption)}</div>` : ''}
+            `;
+        }
+
+        async function loadDiagram() {
+            try {
+                const res = await fetch('/api/v2/diagram?topic=1&lesson=1-1');
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    renderDiagram(json.diagram || {});
+                } else {
+                    renderDiagram({});
+                }
+            } catch {
+                renderDiagram({});
+            }
+        }
+
+        if (syncChannel) {
+            syncChannel.onmessage = (event) => {
+                const msg = event.data || {};
+                if (msg.type === 'v2_diagram_updated' && Number(msg.topicId) === 1 && String(msg.lessonCode) === '1-1') {
+                    loadDiagram();
+                }
+            };
         }
 
         function renderFullLesson(data) {
@@ -254,6 +361,8 @@
             }
             document.getElementById('studentInfoLine').textContent = `Tài khoản học viên: ${student.username}`;
             document.getElementById('readerContent').classList.remove('hidden');
+
+            await loadDiagram();
 
             try {
                 const res = await fetch('/api/v2/stage1-lesson1');
