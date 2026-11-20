@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin V2 - Quản Lý Mở / Khóa Từng Phần</title>
+    <title>Admin V2 - Quản Lý Mở / Khóa Từng Phần & Sơ Đồ</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body {
@@ -14,7 +14,7 @@
             color: #2c3e50;
         }
         .wrap {
-            max-width: 920px;
+            max-width: 940px;
             margin: 0 auto;
             background: #fff;
             border-radius: 16px;
@@ -39,6 +39,9 @@
             font-weight: bold;
             cursor: pointer;
             color: #fff;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
         .btn-green { background: #27ae60; }
         .btn-green:hover { background: #219653; }
@@ -74,6 +77,16 @@
             flex-direction: column;
             gap: 10px;
         }
+        .diagram-panel {
+            margin-top: 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            background: #fafcff;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -95,8 +108,9 @@
             font-weight: bold;
             display: block;
             margin-bottom: 4px;
+            color: #334155;
         }
-        select, input[type="text"], input[type="password"] {
+        select, input[type="text"], input[type="password"], input[type="file"] {
             width: 100%;
             padding: 9px 10px;
             border: 1px solid #cbd5e1;
@@ -125,10 +139,26 @@
         }
         .row-2 {
             display: flex;
-            gap: 8px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .row-2 .btn {
-            flex: 1;
+        .row-2 > * {
+            flex: 1 1 200px;
+        }
+        .preview-box {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 260px;
+            height: auto;
+            border-radius: 8px;
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
         }
         .login-card {
             max-width: 400px;
@@ -144,6 +174,8 @@
         .hidden { display: none !important; }
 
         @media (max-width: 760px) {
+            body { padding: 10px; }
+            .wrap { padding: 16px 14px; border-radius: 12px; }
             .layout { flex-direction: column; }
             .col-panel { flex: 1 1 auto; width: 100%; }
         }
@@ -153,16 +185,16 @@
     <div class="wrap">
         <div class="top-bar">
             <div>
-                <h2 style="margin:0;font-size:20px;">🛡️ Admin V2 — Mở / Khóa Từng Phần Bài Học</h2>
+                <h2 style="margin:0;font-size:20px;">🛡️ Admin V2 — Mở / Khóa Từng Phần & Sơ Đồ</h2>
                 <div style="font-size:12px;color:#64748b;margin-top:4px;">Tách riêng cho cấu trúc phân tầng mới • Không ảnh hưởng trang cũ</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="/study-v2" style="text-decoration:none;"><button type="button" class="btn btn-blue">📖 Mở trang test Bài 1.1</button></a>
-                <a href="/admin/dashboard" style="text-decoration:none;"><button type="button" class="btn btn-gray">⬅️ Admin cũ</button></a>
+                <a href="/read-v2" class="btn btn-blue">📖 Đọc toàn bộ</a>
+                <a href="/study-v2" class="btn btn-orange">📝 Học & kiểm tra</a>
+                <a href="/admin/dashboard" class="btn btn-gray">⬅️ Admin cũ</a>
             </div>
         </div>
 
-        <!-- Form đăng nhập Admin nếu chưa có token hợp lệ -->
         <form id="adminV2LoginBox" class="login-card hidden" onsubmit="event.preventDefault(); loginAdminV2();">
             <h3 style="margin:0;text-align:center;color:#c0392b;">Đăng Nhập Quản Trị (Admin V2)</h3>
             <div>
@@ -176,7 +208,6 @@
             <button type="submit" class="btn btn-red">Đăng nhập Admin</button>
         </form>
 
-        <!-- Bảng quản lý mở/khóa theo từng phần -->
         <div id="adminV2Main" class="hidden">
             <div class="layout">
                 <div class="col-table">
@@ -216,6 +247,48 @@
                     <button type="button" class="btn btn-gray" onclick="loadAllV2()">🔄 Làm mới danh sách</button>
                 </div>
             </div>
+
+            <div class="diagram-panel">
+                <h3 style="margin:0;font-size:16px;color:#1e293b;">🗺️ Upload & Đồng Bộ Sơ Đồ Theo Chủ Đề / Bài</h3>
+
+                <div class="row-2">
+                    <div>
+                        <label class="field-label">Chọn Chủ đề</label>
+                        <select id="diagTopicSelect" onchange="onDiagramTopicChange()">
+                            <option value="1">Chủ Đề 1 (Bài 1.1 – 1.10)</option>
+                            <option value="2">Chủ Đề 2 (Bài 2.1 – 2.10)</option>
+                            <option value="3">Chủ Đề 3 (Bài 3.1 – 3.10)</option>
+                            <option value="4">Chủ Đề 4 (Bài 4.1 – 4.10)</option>
+                            <option value="5">Chủ Đề 5 (Bài 5.1 – 5.10)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Chọn Bài trong Chủ đề</label>
+                        <select id="diagLessonSelect" onchange="loadSelectedDiagramPreview()"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="field-label">Tải ảnh sơ đồ lên (PNG, JPG, WEBP, tối đa 10MB)</label>
+                    <input type="file" id="diagFileInput" accept="image/*" onchange="handleDiagramFilePicked(event)">
+                </div>
+
+                <div>
+                    <label class="field-label">Chú thích sơ đồ</label>
+                    <input type="text" id="diagCaptionInput" placeholder="Ví dụ: Sơ đồ mầu nhiệm sự tha tội và Lễ Vượt Qua">
+                </div>
+
+                <div class="preview-box">
+                    <div style="font-size:12px;color:#64748b;margin-bottom:8px;">Xem trước sơ đồ đã chọn / hiện có</div>
+                    <img id="diagPreviewImg" class="preview-img hidden" src="" alt="Xem trước sơ đồ">
+                    <div id="diagPreviewEmpty" style="font-size:12.5px;color:#94a3b8;padding:10px 6px;">Chưa có ảnh sơ đồ cho bài này.</div>
+                </div>
+
+                <div class="row-2">
+                    <button type="button" class="btn btn-blue" onclick="uploadAndSyncDiagram()">⬆️ Lưu & Đồng Bộ Sơ Đồ</button>
+                    <button type="button" class="btn btn-gray" onclick="loadSelectedDiagramPreview()">🔄 Tải lại sơ đồ</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -223,9 +296,74 @@
         const TOKEN_KEY = 'bible_admin_token_v1';
         const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('bible_lms_sync_v1') : null;
 
+        const V2_TOPICS_LESSONS = {
+            1: [
+                { code: '1-1', label: '1.1 Mầu nhiệm về sự tha tội và Đấng An Xang Hồng' },
+                { code: '1-2', label: '1.2 Đấng Cứu Chúa theo mỗi thời đại và danh mới' },
+                { code: '1-3', label: '1.3 Trái Sự Sống và Đấng An Xang Hồng' },
+                { code: '1-4', label: '1.4 Mẹ Giêrusalem' },
+                { code: '1-5', label: '1.5 Gia Đình Nước Thiên Đàng và Gia Đình' },
+                { code: '1-6', label: '1.6 Hãy Nhớ Ngày Sabát Đặng Làm Nên Ngày Thánh' },
+                { code: '1-7', label: '1.7 Lễ Vượt Qua, Đường đến Sự Sống Đời Đời' },
+                { code: '1-8', label: '1.8 Tôn Kính Thập Tự Giá là Tôn Kính Hình Tượng' },
+                { code: '1-9', label: '1.9 Chịu phép Báptêm ngay' },
+                { code: '1-10', label: '1.10 Kinh Thánh là Sự Thật' }
+            ],
+            2: [
+                { code: '2-1', label: '2.1 Kinh Thánh Làm Chứng cho Ai?' },
+                { code: '2-2', label: '2.2 Vua Đavít và Đấng Christ An Xang Hồng' },
+                { code: '2-3', label: '2.3 Đức Chúa Trời - Đấng lập lại Siôn' },
+                { code: '2-4', label: '2.4 Tiệc Cưới Nước Thiên Đàng' },
+                { code: '2-5', label: '2.5 Lịch Sử của Gia Đình Ápraham' },
+                { code: '2-6', label: '2.6 Lời Tiên Tri Đaniên Chương 2, 7' },
+                { code: '2-7', label: '2.7 Lời Tiên Tri Khải Huyền Chương 13' },
+                { code: '2-8', label: '2.8 Lời Tiên Tri Khải Huyền Chương 17, 18' },
+                { code: '2-9', label: '2.9 Luật Pháp Về Một Phần Mười' },
+                { code: '2-10', label: '2.10 Thành Ẩn Náu và Trái Đất' }
+            ],
+            3: [
+                { code: '3-1', label: '3.1 Ba Vị Thánh Nhất Thể' },
+                { code: '3-2', label: '3.2 Ban Mênchixêđéc' },
+                { code: '3-3', label: '3.3 Mẹ, Nguồn Nước Sự Sống' },
+                { code: '3-4', label: '3.4 Cỏ Lùng và Lúa Mì' },
+                { code: '3-5', label: '3.5 Hội Thánh Được Mua bằng Huyết' },
+                { code: '3-6', label: '3.6 Tin Lành là gì?' },
+                { code: '3-7', label: '3.7 Trước Mặt Ta, Ngươi Chớ Có Các Thần Khác' },
+                { code: '3-8', label: '3.8 Công Việc Đóng Ấn của Đức Chúa Trời' },
+                { code: '3-9', label: '3.9 Tên Được Biên vào Sách Sự Sống' },
+                { code: '3-10', label: '3.10 Linh Hồn có Tồn Tại' }
+            ],
+            4: [
+                { code: '4-1', label: '4.1 Hội Thánh Được Dựng Nên bởi Chồi của Vua Đavít' },
+                { code: '4-2', label: '4.2 Ađam Sau Hết và Đấng An Xang Hồng' },
+                { code: '4-3', label: '4.3 Kinh Thánh là Quyển Sách Tiên Tri' },
+                { code: '4-4', label: '4.4 Ngày Sabát Trong Kinh Thánh là Thứ Mấy Trong Tuần' },
+                { code: '4-5', label: '4.5 Ý Nghĩa Thật của Lễ Vượt Qua' },
+                { code: '4-6', label: '4.6 Luật Pháp của Môise và Luật Pháp của Đấng Christ' },
+                { code: '4-7', label: '4.7 Môise và Đức Chúa Jêsus (Chuyện Thật về Thập Tự Giá)' },
+                { code: '4-8', label: '4.8 Ai là Tiên Tri Giả?' },
+                { code: '4-9', label: '4.9 Sự Phước Lành bởi Một Phần Mười' },
+                { code: '4-10', label: '4.10 Luật Pháp về Thức Ăn' }
+            ],
+            5: [
+                { code: '5-1', label: '5.1 Lời Đức Chúa Trời là Tuyệt Đối' },
+                { code: '5-2', label: '5.2 Ngoài Ta, Các Ngươi Chẳng Làm Chi Được' },
+                { code: '5-3', label: '5.3 Điều Răn của Đức Chúa Trời và Điều Răn của Loài Người' },
+                { code: '5-4', label: '5.4 Hãy Coi Chừng Tiên Tri Giả' },
+                { code: '5-5', label: '5.5 Trị Vì của Đức Chúa Trời và Cai Trị của Ma Quỉ' },
+                { code: '5-6', label: '5.6 Luật Pháp Sự Sống và Luật Pháp Sự Chết' },
+                { code: '5-7', label: '5.7 Tái Lâm và Phán Xét Cuối Cùng' },
+                { code: '5-8', label: '5.8 Ngự Đến Trên Đám Mây' },
+                { code: '5-9', label: '5.9 Ví Dụ về Cây Vả' },
+                { code: '5-10', label: '5.10 Đức Chúa Trời Đến Phương Đông' }
+            ]
+        };
+
         let adminToken = localStorage.getItem(TOKEN_KEY) || '';
         let lessonContent = null;
         let studentsCache = [];
+        let pickedDiagramBase64 = '';
+        let pickedDiagramFileName = '';
 
         function getAuthHeaders(extra = {}) {
             return {
@@ -263,6 +401,111 @@
             await loadAllV2();
         }
 
+        function populateDiagramLessons(topicId) {
+            const sel = document.getElementById('diagLessonSelect');
+            const items = V2_TOPICS_LESSONS[Number(topicId)] || V2_TOPICS_LESSONS[1];
+            const prev = sel.value;
+            sel.innerHTML = '';
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.code;
+                opt.textContent = item.label;
+                sel.appendChild(opt);
+            });
+            if (items.some(i => i.code === prev)) {
+                sel.value = prev;
+            } else if (items.length) {
+                sel.value = items[0].code;
+            }
+        }
+
+        function onDiagramTopicChange() {
+            const topicId = Number(document.getElementById('diagTopicSelect').value || 1);
+            pickedDiagramBase64 = '';
+            pickedDiagramFileName = '';
+            const fileInput = document.getElementById('diagFileInput');
+            if (fileInput) fileInput.value = '';
+            populateDiagramLessons(topicId);
+            loadSelectedDiagramPreview();
+        }
+
+        function setDiagramPreview(url, caption) {
+            const img = document.getElementById('diagPreviewImg');
+            const empty = document.getElementById('diagPreviewEmpty');
+            if (url) {
+                img.src = url;
+                img.classList.remove('hidden');
+                empty.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                empty.classList.remove('hidden');
+                empty.textContent = caption ? `Chú thích: ${caption} (chưa có ảnh)` : 'Chưa có ảnh sơ đồ cho bài này.';
+            }
+        }
+
+        function handleDiagramFilePicked(event) {
+            const file = event.target?.files?.[0];
+            if (!file) return;
+            pickedDiagramFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = () => {
+                pickedDiagramBase64 = String(reader.result || '');
+                setDiagramPreview(pickedDiagramBase64, document.getElementById('diagCaptionInput').value.trim());
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function loadSelectedDiagramPreview() {
+            const topicId = Number(document.getElementById('diagTopicSelect').value || 1);
+            const lessonCode = document.getElementById('diagLessonSelect').value || '1-1';
+            try {
+                const res = await fetch(`/api/v2/diagram?topic=${topicId}&lesson=${encodeURIComponent(lessonCode)}`);
+                const json = await res.json();
+                if (res.ok && json.success && json.diagram) {
+                    document.getElementById('diagCaptionInput').value = json.diagram.caption || '';
+                    setDiagramPreview(json.diagram.imageUrl || '', json.diagram.caption || '');
+                } else {
+                    document.getElementById('diagCaptionInput').value = '';
+                    setDiagramPreview('', '');
+                }
+            } catch {
+                setDiagramPreview('', '');
+            }
+        }
+
+        async function uploadAndSyncDiagram() {
+            const topicId = Number(document.getElementById('diagTopicSelect').value || 1);
+            const lessonCode = document.getElementById('diagLessonSelect').value || '1-1';
+            const caption = document.getElementById('diagCaptionInput').value.trim();
+
+            const res = await fetch('/api/admin/v2/upload-diagram', {
+                method: 'POST',
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    topicId,
+                    lessonCode,
+                    caption,
+                    imageDataUrl: pickedDiagramBase64,
+                    fileName: pickedDiagramFileName
+                })
+            });
+            if (res.status === 401) {
+                showLoginBox();
+                return alert('Phiên Admin đã hết hạn, vui lòng đăng nhập lại.');
+            }
+            const data = await res.json();
+            alert(data.message || 'Đã lưu cấu hình sơ đồ!');
+            pickedDiagramBase64 = '';
+            pickedDiagramFileName = '';
+            const fileInput = document.getElementById('diagFileInput');
+            if (fileInput) fileInput.value = '';
+            await loadSelectedDiagramPreview();
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'v2_diagram_updated', topicId, lessonCode, ts: Date.now() });
+            }
+        }
+
         async function loadAllV2() {
             try {
                 const v2Res = await fetch('/api/v2/stage1-lesson1');
@@ -286,6 +529,10 @@
                 renderStudentsTable();
                 populateStudentDropdown();
                 renderSectionCheckboxesForSelected();
+
+                const currentDiagTopic = Number(document.getElementById('diagTopicSelect').value || 1);
+                populateDiagramLessons(currentDiagTopic);
+                await loadSelectedDiagramPreview();
             } catch (err) {
                 alert('Lỗi tải dữ liệu Admin V2: ' + err.message);
             }
