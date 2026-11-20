@@ -1,0 +1,295 @@
+{
+  "stageId": 1,
+  "stageName": "Giai đoạn 1",
+  "lessonCode": "1-1",
+  "lessonTitle": "Mầu nhiệm về sự tha tội và Đấng An Xang Hồng",
+  "sectionQuizzes": [
+    {
+      "sectionId": "1-1-sec-1",
+      "sectionTitle": "1. Linh hồn loài người từ đâu đến?",
+      "passScore": 70,
+      "questions": [
+        {
+          "questionId": "1-1-sec-1-q1",
+          "pointRef": 2,
+          "type": "verse_ref",
+          "prompt": "Câu Kinh Thánh: \"Đức Chúa Trời lấy bụi đất nắn nên hình người, hà sanh khí vào lỗ mũi; thì người trở nên một loài sanh linh.\" thuộc địa chỉ nào?",
+          "options": [
+            "Sáng Thế Ký 2:7",
+            "Truyền Đạo 12:7",
+            "Sáng Thế Ký 1:26",
+            "Ê-phê-sô 1:7"
+          ],
+          "answer": "Sáng Thế Ký 2:7",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-1-q2",
+          "pointRef": 2,
+          "type": "section_content",
+          "prompt": "Theo phần giải thích Sáng Thế Ký 2:7, người sống (loài sanh linh) được tạo thành bởi sự kết hợp của hai phần nào?",
+          "options": [
+            "Bụi đất (xác thịt) và sanh khí (linh hồn)",
+            "Đất sét và hơi nước",
+            "Chỉ có xác thịt biến hóa thành linh hồn",
+            "Ánh sáng và lời phán của thiên sứ"
+          ],
+          "answer": "Bụi đất (xác thịt) và sanh khí (linh hồn)",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-1-q3",
+          "pointRef": 3,
+          "type": "verse_ref",
+          "prompt": "Địa chỉ câu chép về việc: \"Và bụi tro trở đất y như nguyên cũ, và thần linh trở về nơi Đức Chúa Trời, là Đấng đã ban nó\" là:",
+          "options": [
+            "Truyền Đạo 12:7",
+            "Sáng Thế Ký 2:7",
+            "Châm Ngôn 8:22",
+            "Gióp 38:21"
+          ],
+          "answer": "Truyền Đạo 12:7",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-1-q4",
+          "pointRef": 3,
+          "type": "section_content",
+          "prompt": "Dựa vào từ \"trở về\" trong Truyền Đạo 12:7, lời giải thích rút ra kết luận gì về linh hồn chúng ta?",
+          "options": [
+            "Chúng ta là những linh hồn từng ở cùng Đức Chúa Trời trên Nước Thiên Đàng (thiên sứ) trước khi đến thế gian",
+            "Linh hồn chỉ mới bắt đầu được sinh ra khi con người chào đời ở thế gian",
+            "Linh hồn sẽ tan biến sau khi thể xác trở về đất",
+            "Linh hồn sẽ hóa thân thành các sinh vật khác dưới đất"
+          ],
+          "answer": "Chúng ta là những linh hồn từng ở cùng Đức Chúa Trời trên Nước Thiên Đàng (thiên sứ) trước khi đến thế gian",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "sectionId": "1-1-sec-2",
+      "sectionTitle": "2. Linh hồn loài người đã được sinh ra ngay từ Nước Thiên Đàng trước khi xuống trái đất này",
+      "passScore": 70,
+      "questions": [
+        {
+          "questionId": "1-1-sec-2-q1",
+          "pointRef": 1,
+          "type": "verse_ref",
+          "prompt": "Đoạn Kinh Thánh nào làm chứng về Salômôn đã được lập từ đời đời, sanh ra trước khi trái đất và vực sâu được dựng nên?",
+          "options": [
+            "Châm Ngôn 8:22-30",
+            "Gióp 38:1-4",
+            "Gióp 38:21",
+            "Luca 19:10"
+          ],
+          "answer": "Châm Ngôn 8:22-30",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-2-q2",
+          "pointRef": 2,
+          "type": "verse_ref",
+          "prompt": "Địa chỉ câu chép lời Đức Chúa Trời hỏi Gióp: \"Khi ta đặt nền trái đất, thì ngươi ở đâu?\" là câu nào?",
+          "options": [
+            "Gióp 38:1-4",
+            "Gióp 38:21",
+            "Châm Ngôn 8:22-30",
+            "Ê-phê-sô 1:7"
+          ],
+          "answer": "Gióp 38:1-4",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-2-q3",
+          "pointRef": 3,
+          "type": "verse_ref",
+          "prompt": "Câu Kinh Thánh: \"Chắc ngươi biết điều đó, vì bấy giờ ngươi đã sanh ra rồi, và số các ngày ngươi rất lấy làm nhiều!\" nằm ở đâu?",
+          "options": [
+            "Gióp 38:21",
+            "Gióp 38:1-4",
+            "Truyền Đạo 12:7",
+            "Mathiơ 9:13"
+          ],
+          "answer": "Gióp 38:21",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-2-q4",
+          "pointRef": 3,
+          "type": "section_content",
+          "prompt": "Đức Chúa Trời bày tỏ sự thật gì thông qua trường hợp của Salômôn và Gióp?",
+          "options": [
+            "Tất cả chúng ta đều đã ở trên Nước Thiên Đàng trước khi sanh ra trên đất này",
+            "Chỉ duy nhất Salômôn và Gióp mới được ở trên Nước Thiên Đàng trước",
+            "Gióp và Salômôn đã mang xác thịt sống dưới đất trước khi trái đất thành hình",
+            "Linh hồn loài người không có mối liên hệ nào với thiên sứ trên trời"
+          ],
+          "answer": "Tất cả chúng ta đều đã ở trên Nước Thiên Đàng trước khi sanh ra trên đất này",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "sectionId": "1-1-sec-3",
+      "sectionTitle": "3. Chúng ta vốn là thiên sứ trên trời, tại sao lại đến thế gian này?",
+      "passScore": 70,
+      "questions": [
+        {
+          "questionId": "1-1-sec-3-q1",
+          "pointRef": 1,
+          "type": "verse_ref",
+          "prompt": "Địa chỉ câu Kinh Thánh: \"Vì Con Người đã đến tìm và cứu kẻ bị mất.\" là:",
+          "options": [
+            "Luca 19:10",
+            "Mathiơ 9:13",
+            "Luca 15:7",
+            "Luca 22:20"
+          ],
+          "answer": "Luca 19:10",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-3-q2",
+          "pointRef": 2,
+          "type": "verse_ref",
+          "prompt": "Câu: \"Vì ta không tới để gọi kẻ công bình, bèn là gọi kẻ có tội.\" thuộc câu Kinh Thánh nào?",
+          "options": [
+            "Mathiơ 9:13",
+            "Luca 19:10",
+            "Mathiơ 26:26-28",
+            "Ê-phê-sô 1:7"
+          ],
+          "answer": "Mathiơ 9:13",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-3-q3",
+          "pointRef": 2,
+          "type": "section_content",
+          "prompt": "Khi so sánh Luca 19:10 và Mathiơ 9:13, chúng ta biết được nguyên nhân con người bị mất từ trên trời là gì?",
+          "options": [
+            "Vì đã phạm tội trọng trên trời đáng phải chịu tử hình",
+            "Vì thiên sứ trên trời muốn trải nghiệm cuộc sống xác thịt",
+            "Vì bị lạc đường trong không gian",
+            "Vì Đức Chúa Trời quên mất tên của họ"
+          ],
+          "answer": "Vì đã phạm tội trọng trên trời đáng phải chịu tử hình",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-3-q4",
+          "pointRef": 2,
+          "type": "section_content",
+          "prompt": "Theo bài học, thế gian trái đất này được ví như nơi chốn nào đối với các tội nhân trên trời?",
+          "options": [
+            "Nhà tù / thành ẩn náu phần linh hồn",
+            "Cung điện vui vẻ vĩnh cửu",
+            "Nơi nghỉ dưỡng hoàn hảo",
+            "Nơi không có bất cứ tai ương hay hoạn nạn nào"
+          ],
+          "answer": "Nhà tù / thành ẩn náu phần linh hồn",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "sectionId": "1-1-sec-4",
+      "sectionTitle": "4. Phương pháp trở về Nước Thiên Đàng là gì?",
+      "passScore": 70,
+      "questions": [
+        {
+          "questionId": "1-1-sec-4-q1",
+          "pointRef": 1,
+          "type": "verse_ref",
+          "prompt": "Câu Kinh Thánh: \"Ấy là trong Ngài chúng ta được cứu chuộc bởi huyết Ngài, được tha tội, theo sự dư dật của ân điển Ngài\" nằm ở địa chỉ nào?",
+          "options": [
+            "Ê-phê-sô 1:7",
+            "Mathiơ 26:26-28",
+            "Truyền Đạo 12:7",
+            "Luca 22:20"
+          ],
+          "answer": "Ê-phê-sô 1:7",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-4-q2",
+          "pointRef": 2,
+          "type": "verse_ref",
+          "prompt": "Đoạn Kinh Thánh ghi chép việc Đức Chúa Jêsus dùng bánh và chén rượu nho Lễ Vượt Qua làm huyết giao ước đổ ra cho nhiều người được tha tội là:",
+          "options": [
+            "Mathiơ 26:26-28",
+            "Ê-phê-sô 1:7",
+            "Luca 19:10",
+            "Châm Ngôn 8:22-30"
+          ],
+          "answer": "Mathiơ 26:26-28",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-4-q3",
+          "pointRef": 2,
+          "type": "section_content",
+          "prompt": "Để nhờ vào sức của huyết Đức Chúa Jêsus mà nhận được sự tha tội và trở về Nước Thiên Đàng, điều nhất định phải giữ là gì?",
+          "options": [
+            "Lễ Vượt Qua",
+            "Luật lệ của loài người",
+            "Tự lập công đức cá nhân",
+            "Các tập tục truyền thống dân gian"
+          ],
+          "answer": "Lễ Vượt Qua",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "sectionId": "1-1-sec-5",
+      "sectionTitle": "5. Đường lối đền đáp ơn của Đức Chúa Trời là gì?",
+      "passScore": 70,
+      "questions": [
+        {
+          "questionId": "1-1-sec-5-q1",
+          "pointRef": 1,
+          "type": "verse_ref",
+          "prompt": "Địa chỉ câu Kinh Thánh: \"Khi ăn xong, Ngài cũng làm như vậy, lấy chén đưa cho môn đồ, mà phán rằng: Chén này là giao ước mới trong huyết ta vì các ngươi mà đổ ra.\" là:",
+          "options": [
+            "Luca 22:20",
+            "Luca 15:7",
+            "Ê-phê-sô 1:7",
+            "Mathiơ 9:13"
+          ],
+          "answer": "Luca 22:20",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-5-q2",
+          "pointRef": 2,
+          "type": "verse_ref",
+          "prompt": "Câu Kinh Thánh: \"Ta nói cùng các ngươi, trên trời cũng như vậy, sẽ vui mừng cho một kẻ có tội ăn năn hơn là chín mươi chín kẻ công bình không cần phải ăn năn.\" thuộc câu nào?",
+          "options": [
+            "Luca 15:7",
+            "Luca 22:20",
+            "Mathiơ 26:28",
+            "Sáng Thế Ký 2:7"
+          ],
+          "answer": "Luca 15:7",
+          "points": 10
+        },
+        {
+          "questionId": "1-1-sec-5-q3",
+          "pointRef": 2,
+          "type": "section_content",
+          "prompt": "Theo bài học, công việc mà Đức Chúa Trời vui mừng nhất và là cách chúng ta đền đáp ân huệ của Ngài là gì?",
+          "options": [
+            "Làm cho một tội nhân hối cải và mạnh mẽ rao truyền tình yêu thương hy sinh của Cha Mẹ",
+            "Tích trữ thật nhiều tài sản xác thịt trên đất",
+            "Chỉ giữ đức tin riêng tư trong lòng và giấu kín",
+            "Tìm kiếm danh vọng ở thế gian"
+          ],
+          "answer": "Làm cho một tội nhân hối cải và mạnh mẽ rao truyền tình yêu thương hy sinh của Cha Mẹ",
+          "points": 10
+        }
+      ]
+    }
+  ]
+}
