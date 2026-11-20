@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Học & Kiểm Tra Từng Phần - Bài 1.1</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f6;
+            margin: 0;
+            padding: 16px;
+            color: #2c3e50;
+        }
+        .wrap {
+            max-width: 780px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+        }
+        .header-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #e5e9f0;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+        }
+        .badge {
+            background: #e8f4fd;
+            color: #1f618d;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+        }
+        .btn-primary { background: #27ae60; }
+        .btn-primary:hover { background: #219653; }
+        .btn-blue { background: #2980b9; }
+        .btn-blue:hover { background: #2471a3; }
+        .btn-orange { background: #e67e22; }
+        .btn-orange:hover { background: #ca6f1e; }
+        .btn-gray { background: #7f8c8d; }
+        .btn-gray:hover { background: #6c7a7b; }
+
+        .section-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .sec-tab {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .sec-tab.active {
+            background: #2980b9;
+            color: #fff;
+            border-color: #2980b9;
+        }
+        .sec-tab.passed {
+            border-color: #27ae60;
+            background: #eafaf1;
+            color: #1e8449;
+        }
+        .sec-tab.active.passed {
+            background: #27ae60;
+            color: #fff;
+        }
+        .sec-tab.locked {
+            opacity: 0.55;
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+
+        .card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            background: #fafcff;
+            margin-bottom: 14px;
+        }
+        .point-box {
+            border-left: 4px solid #3498db;
+            background: #fff;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .explanation-text {
+            line-height: 1.65;
+            font-size: 14px;
+            margin-bottom: 10px;
+            white-space: pre-line;
+        }
+        .verse-box {
+            background: #fef9e7;
+            border: 1px solid #f7dc6f;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-top: 8px;
+        }
+        .verse-ref {
+            font-weight: bold;
+            color: #9a7d0a;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .verse-text {
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: #333;
+        }
+        .summary-box {
+            background: #eaf4fc;
+            border-left: 4px solid #2980b9;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .quiz-card {
+            border: 2px solid #f39c12;
+            background: #fffdf9;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 14px;
+        }
+        .q-item {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .q-prompt {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            line-height: 1.45;
+        }
+        .opt-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .opt-label:hover { background: #f3f4f6; }
+        .result-banner {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .hidden { display: none !important; }
+        .footer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="header-bar">
+            <div>
+                <div class="badge" id="lessonBadge">Giai đoạn 1 • Bài 1-1</div>
+                <h2 style="margin:6px 0 0 0;font-size:20px;" id="lessonTitle">Đang tải bài học...</h2>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-gray" onclick="resetTestProgress()">🔄 Reset tiến độ test</button>
+                <a href="/" style="text-decoration:none;"><button type="button" class="btn btn-blue">⬅️ Về app cũ</button></a>
+            </div>
+        </div>
+
+        <div class="section-tabs" id="sectionTabs"></div>
+
+        <div id="studyView">
+            <div class="card" id="sectionContentCard"></div>
+            <div class="footer-actions">
+                <button type="button" class="btn btn-orange" onclick="openSectionQuiz()">📝 Làm bài kiểm tra phần này</button>
+                <button type="button" class="btn btn-primary hidden" id="btnNextSection" onclick="goNextSection()">Sang phần tiếp theo ➡️</button>
+                <button type="button" class="btn btn-gray" onclick="debugUnlockAllSections()">🔓 Mở tạm tất cả phần để test</button>
+            </div>
+        </div>
+
+        <div id="quizView" class="quiz-card hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+                <h3 style="margin:0;font-size:17px;color:#d35400;" id="quizTitle">Kiểm tra phần</h3>
+                <button type="button" class="btn btn-gray" onclick="closeSectionQuiz()">Quay lại đọc phần</button>
+            </div>
+            <div id="quizQuestionsList"></div>
+            <button type="button" class="btn btn-primary" onclick="gradeSectionQuiz()">✅ Nộp bài kiểm tra phần</button>
+            <div id="quizResultBox" class="result-banner hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY_V2 = 'bible_v2_lesson1_1_test_v1';
+
+        let contentData = null;
+        let quizData = null;
+        let currentSectionIndex = 0;
+        let testState = {
+            passedSectionIds: [],
+            unlockAllForTest: false
+        };
+
+        function loadTestState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_V2);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    testState.passedSectionIds = Array.isArray(parsed.passedSectionIds) ? parsed.passedSectionIds : [];
+                    testState.unlockAllForTest = Boolean(parsed.unlockAllForTest);
+                }
+            } catch {}
+        }
+
+        function saveTestState() {
+            localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(testState));
+        }
+
+        function isSectionUnlocked(index) {
+            if (testState.unlockAllForTest) return true;
+            if (index === 0) return true;
+            const sections = contentData?.sections || [];
+            for (let i = 0; i < index; i++) {
+                if (!testState.passedSectionIds.includes(sections[i].sectionId)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function renderSectionTabs() {
+            const tabsEl = document.getElementById('sectionTabs');
+            tabsEl.innerHTML = '';
+            const sections = contentData?.sections || [];
+
+            sections.forEach((sec, idx) => {
+                const unlocked = isSectionUnlocked(idx);
+                const passed = testState.passedSectionIds.includes(sec.sectionId);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `sec-tab ${idx === currentSectionIndex ? 'active' : ''} ${passed ? 'passed' : ''} ${unlocked ? '' : 'locked'}`;
+                const statusIcon = passed ? '✅ ' : (unlocked ? '🔓 ' : '🔒 ');
+                btn.textContent = `${statusIcon}Phần ${sec.sectionOrder}`;
+                btn.disabled = !unlocked;
+                btn.onclick = () => {
+                    currentSectionIndex = idx;
+                    closeSectionQuiz();
+                    renderAll();
+                };
+                tabsEl.appendChild(btn);
+            });
+        }
+
+        function renderSectionContent() {
+            const sec = contentData.sections[currentSectionIndex];
+            const card = document.getElementById('sectionContentCard');
+            const passed = testState.passedSectionIds.includes(sec.sectionId);
+            const hasNext = currentSectionIndex < contentData.sections.length - 1;
+            const nextUnlocked = hasNext && isSectionUnlocked(currentSectionIndex + 1);
+
+            let pointsHtml = '';
+            (sec.points || []).forEach(pt => {
+                let versesHtml = '';
+                (pt.verses || []).forEach(v => {
+                    versesHtml += `
+                        <div class="verse-box">
+                            <div class="verse-ref">📖 ${escapeHtml(v.ref)}</div>
+                            <div class="verse-text">${escapeHtml(v.text || '(Chưa điền nội dung câu Kinh Thánh)')}</div>
+                        </div>
+                    `;
+                });
+
+                pointsHtml += `
+                    <div class="point-box">
+                        <div style="font-size:12px;font-weight:bold;color:#2980b9;margin-bottom:6px;">Ý ${pt.pointOrder}</div>
+                        <div class="explanation-text">${escapeHtml(pt.explanation)}</div>
+                        ${versesHtml}
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+                    <h3 style="margin:0;font-size:17px;">${escapeHtml(sec.sectionTitle)}</h3>
+                    <span class="badge">${passed ? 'Đã vượt qua phần này' : 'Chưa vượt qua'}</span>
+                </div>
+                ${pointsHtml}
+                ${sec.summary ? `<div class="summary-box"><b>Tóm lược phần:</b> ${escapeHtml(sec.summary)}</div>` : ''}
+            `;
+
+            const btnNext = document.getElementById('btnNextSection');
+            if (hasNext && (passed || nextUnlocked)) {
+                btnNext.classList.remove('hidden');
+            } else {
+                btnNext.classList.add('hidden');
+            }
+        }
+
+        function getSectionQuizConfig(sectionId) {
+            const list = quizData?.sectionQuizzes || [];
+            return list.find(q => q.sectionId === sectionId) || { passScore: 70, questions: [] };
+        }
+
+        function openSectionQuiz() {
+            const sec = contentData.sections[currentSectionIndex];
+            const qCfg = getSectionQuizConfig(sec.sectionId);
+            const questions = qCfg.questions || [];
+
+            document.getElementById('quizTitle').textContent = `Kiểm tra: ${sec.sectionTitle} (Cần ≥ ${qCfg.passScore || 70} điểm)`;
+            document.getElementById('quizResultBox').classList.add('hidden');
+
+            const listEl = document.getElementById('quizQuestionsList');
+            listEl.innerHTML = '';
+
+            if (!questions.length) {
+                listEl.innerHTML = `<p>Phần này chưa có câu hỏi trong file quiz JSON.</p>`;
+            } else {
+                questions.forEach((q, qIdx) => {
+                    let optsHtml = '';
+                    (q.options || []).forEach((opt, oIdx) => {
+                        optsHtml += `
+                            <label class="opt-label">
+                                <input type="radio" name="q_${qIdx}" value="${escapeAttr(opt)}">
+                                <span>${escapeHtml(opt)}</span>
+                            </label>
+                        `;
+                    });
+
+                    listEl.innerHTML += `
+                        <div class="q-item">
+                            <div class="q-prompt">Câu ${qIdx + 1} (${q.points || 10}đ): ${escapeHtml(q.prompt)}</div>
+                            ${optsHtml}
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('studyView').classList.add('hidden');
+            document.getElementById('quizView').classList.remove('hidden');
+        }
+
+        function closeSectionQuiz() {
+            document.getElementById('quizView').classList.add('hidden');
+            document.getElementById('studyView').classList.remove('hidden');
+        }
+
+        function gradeSectionQuiz() {
+            const sec = contentData.sections[currentSectionIndex];
+            const qCfg = getSectionQuizConfig(sec.sectionId);
+            const questions = qCfg.questions || [];
+            if (!questions.length) return;
+
+            let earned = 0;
+            let total = 0;
+
+            questions.forEach((q, qIdx) => {
+                const pts = Number(q.points || 10);
+                total += pts;
+                const checked = document.querySelector(`input[name="q_${qIdx}"]:checked`);
+                if (checked && checked.value === q.answer) {
+                    earned += pts;
+                }
+            });
+
+            const percent = total > 0 ? Math.round((earned / total) * 100) : 0;
+            const passThreshold = Number(qCfg.passScore || 70);
+            const passed = percent >= passThreshold;
+
+            const box = document.getElementById('quizResultBox');
+            box.classList.remove('hidden');
+
+            if (passed) {
+                box.className = 'result-banner pass';
+                box.textContent = `🎉 ĐẠT (${earned}/${total} điểm — ${percent}%, yêu cầu ≥ ${passThreshold}%). Phần tiếp theo đã được mở khóa!`;
+                if (!testState.passedSectionIds.includes(sec.sectionId)) {
+                    testState.passedSectionIds.push(sec.sectionId);
+                    saveTestState();
+                }
+                renderSectionTabs();
+            } else {
+                box.className = 'result-banner fail';
+                box.textContent = `❌ CHƯA ĐẠT (${earned}/${total} điểm — ${percent}%, cần ≥ ${passThreshold}%). Hãy xem lại nội dung phần và làm lại.`;
+            }
+        }
+
+        function goNextSection() {
+            if (currentSectionIndex < contentData.sections.length - 1 && isSectionUnlocked(currentSectionIndex + 1)) {
+                currentSectionIndex++;
+                closeSectionQuiz();
+                renderAll();
+            }
+        }
+
+        function debugUnlockAllSections() {
+            testState.unlockAllForTest = !testState.unlockAllForTest;
+            saveTestState();
+            renderAll();
+        }
+
+        function resetTestProgress() {
+            localStorage.removeItem(STORAGE_KEY_V2);
+            testState = { passedSectionIds: [], unlockAllForTest: false };
+            currentSectionIndex = 0;
+            closeSectionQuiz();
+            renderAll();
+        }
+
+        function renderAll() {
+            document.getElementById('lessonBadge').textContent = `${contentData.stageName} • Bài ${contentData.lessonCode}`;
+            document.getElementById('lessonTitle').textContent = contentData.lessonTitle;
+            renderSectionTabs();
+            renderSectionContent();
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function escapeAttr(str) {
+            return String(str ?? '').replace(/"/g, '&quot;');
+        }
+
+        async function init() {
+            loadTestState();
+            try {
+                const [cRes, qRes] = await Promise.all([
+                    fetch('/stage1_lesson1_content.json'),
+                    fetch('/stage1_lesson1_quiz.json')
+                ]);
+                if (!cRes.ok || !qRes.ok) {
+                    throw new Error('Không tìm thấy stage1_lesson1_content.json hoặc stage1_lesson1_quiz.json');
+                }
+                contentData = await cRes.json();
+                quizData = await qRes.json();
+                renderAll();
+            } catch (err) {
+                document.getElementById('lessonTitle').textContent = 'Lỗi tải dữ liệu Bài 1.1: ' + err.message;
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
